@@ -1,9 +1,12 @@
-Still needs a lot of work. I'll make this auto install the modules soon, until then, you can install the dependencies using pip:
+Until I do further testing, install this environment using Conda (Python 3.5 version)
 
-pip install autobahn
-pip install numpy
-pip install scipy
-pip install Pillow
-pip install pyscreenshot
+https://www.continuum.io/downloads#windows
 
-You'll also need to be running Python3
+After installation, you can create a new environment with the required dependencies using:
+
+1) Open command prompt and navigate to this app's directory (overwatch-python)
+2) Create a conda environment using "conda env create -f conda_environment.yml"
+3) Activate the new environment: "activate OverwatchApp"
+4) Start the app: "python overwatch_app.py"
+
+If you need to break out of the app without closing the command prompt, press Ctrl + C. (Possibly multiple times)
