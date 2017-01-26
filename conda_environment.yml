@@ -1,0 +1,26 @@
+name: OverwatchApp
+channels: !!python/tuple
+- defaults
+dependencies:
+- bzip2=1.0.6=vc14_3
+- conda-forge::autobahn=0.17.1=py35_0
+- conda-forge::six=1.10.0=py35_1
+- conda-forge::txaio=2.6.0=py35_0
+- freetype=2.5.5=vc14_1
+- jpeg=8d=vc14_2
+- libpng=1.6.22=vc14_0
+- libtiff=4.0.6=vc14_2
+- mkl=11.3.3=1
+- numpy=1.11.2=py35_0
+- pillow=3.4.2=py35_0
+- pip=9.0.1=py35_1
+- python=3.5.2=0
+- scipy=0.18.1=np111py35_0
+- setuptools=27.2.0=py35_1
+- vs2015_runtime=14.0.25123=0
+- wheel=0.29.0=py35_0
+- zlib=1.2.8=vc14_3
+- pip:
+  - easyprocess==0.2.3
+  - pyscreenshot==0.4.2
+
