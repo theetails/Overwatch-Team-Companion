@@ -2,7 +2,7 @@ import operator
 from PIL import Image
 
 class Hero:
-	heroesReferenceDictionary = {"searching": "blank", "unknown": "blank", "dva": 1, "reinhardt": 2, "roadhog": 3, "winston": 4, "zarya": 5, "tracer": 6, "mccree": 7, "pharah": 8, "reaper": 9, "soldier76": 10, "genji": 11, "bastion": 12, "hanzo": 13, "junkrat": 14, "mei": 15, "torbjorn": 16, "widowmaker": 17, "lucio": 18, "mercy": 19, "symmetra": 20, "zenyatta": 21, "ana": 22, "sombra": 23}
+	heroesReferenceDictionary = {"unknown": "blank", "searching": "blank", "dva": 1, "reinhardt": 2, "roadhog": 3, "winston": 4, "zarya": 5, "tracer": 6, "mccree": 7, "pharah": 8, "reaper": 9, "soldier76": 10, "genji": 11, "bastion": 12, "hanzo": 13, "junkrat": 14, "mei": 15, "torbjorn": 16, "widowmaker": 17, "lucio": 18, "mercy": 19, "symmetra": 20, "zenyatta": 21, "ana": 22, "sombra": 23}
 	
 	currentHero = None
 	previousHero = None
@@ -78,6 +78,11 @@ class Hero:
 			return "blank"
 		else:
 			return self.heroesReferenceDictionary[self.currentHero]
+			
+	def getHeroNameFromNumber(self, heroNumber):
+		for referenceName, referenceNumber in self.heroesReferenceDictionary.items():
+			if (heroNumber == referenceNumber):
+				return referenceName
 		
 	def clearHero(self):
 		self.currentHero = None

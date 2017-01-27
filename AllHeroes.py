@@ -120,3 +120,16 @@ class AllHeroes(GameObject):
 				hero.clearHero()
 		self.heroesToList()
 		self.broadcastHeroes(broadcaster)
+		
+	def changeHeroes(self, incomingHeroes):
+		incomingHerosDictionary = {}
+		count = 1
+		for row in incomingHeroes:
+			for heroNumber in row:
+				incomingHerosDictionary[count]=heroNumber
+				count = count + 1
+		for heroNumber, hero in self.heroesDictionary.items():
+			thisHeroName = hero.getHeroNameFromNumber(incomingHerosDictionary[heroNumber])
+			hero.setHero(thisHeroName)
+		self.heroesToList()
+		

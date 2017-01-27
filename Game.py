@@ -25,7 +25,7 @@ class Game:
 			if (heroesChanged):
 				self.heroes.broadcastHeroes(broadcaster)
 		elif (currentView == "Hero Select"):
-			sleepTime = 4
+			sleepTime = 3
 			
 			mapIdentified = self.map.identifyMap(screenImgArray) #check Map, return if change
 			sideIdentified = self.map.identifySide(screenImgArray)

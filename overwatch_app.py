@@ -10,31 +10,41 @@ from GameObject import GameObject #not for main function
 	
 class AppController(ApplicationSession):
 
-	# 1. subscribe to a topic so we receive events
-	#def onevent(msg):
-		#print("Got event: {}".format(msg))
 	
-	#yield self.subscribe(onevent, subscriptionString)
-	#self.publish(u'subscriptionString',"test")
-	#print ("published")
-	#asyncio.get_event_loop().stop()
-
-	# 2. publish an event to a topic
-	# self.publish('com.myapp.hello', 'Hello, world!')
 		
 	@asyncio.coroutine
-	def onJoin(self, details):
+	async def onJoin(self, details):
 		
-		
-		
-		gameObject = Game()
+		#Initialize Game Object & obtain Subscription String
+		self.gameObject = Game()
 		subscriptionID = input("Enter your Session ID:")
 		self.subscriptionString	= 'com.voxter.teambuilder.'+subscriptionID
 		tmp = sp.call('cls',shell=True)
 		
+		# Subscribe to the room so we receive events
+		def onEvent(msg1, msg2=None):
+			#debug output
+			if (msg2 == None):
+				print("Got event: Argument 1: {" + str(msg1) + "}")
+			else:
+				print("Got event: Argument 1: {" + str(msg1) + "} Argument 2: {" + str(msg2) + "}")
+			
+			if (msg1 == "Hello"):
+				self.gameObject.heroes.broadcastHeroes(self)
+				self.gameObject.map.broadcastOptions(self)
+			elif (msg1 == "heroes"):
+				self.gameObject.heroes.changeHeroes(msg2)
+		
+		await self.subscribe(onEvent, self.subscriptionString)
+		
+		#self.publish(u'subscriptionString',"test")
+		#print ("published")
+		#asyncio.get_event_loop().stop()
+		
+		
 		while True:
-			sleepTime = gameObject.main(self)
-			yield from asyncio.sleep(sleepTime)
+			sleepTime = self.gameObject.main(self)
+			await asyncio.sleep(sleepTime)
 
 #supplementary functions
 
