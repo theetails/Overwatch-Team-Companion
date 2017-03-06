@@ -140,7 +140,7 @@ class MapInfo(GameObject):
 		#side options: offense, defense
 		thisMap.append(self.currentMapType)
 		#type options: escort, assault, control
-		thisMap.append("competitive")
+		thisMap.append("single_hero")
 		
 		optionsToSend = ["options", thisMap]
 		broadcaster.publish(broadcaster.subscriptionString, optionsToSend)
