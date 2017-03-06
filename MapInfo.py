@@ -9,8 +9,8 @@ class MapInfo(GameObject):
 	
 	mapDictionary = {"dorado": "escort", "eichenwalde": "transition", "hanamura": "assault", "hollywood": "transition", "ilios": "control", "king's row": "transition", "lijiang": "control", "nepal": "control", "numbani": "transition", "oasis": "control", "route66": "escort", "temple of anubis": "assault", "volskaya industries": "assault", "watchpoint gibraltar": "escort"}
 	currentMap = [None]
-	currentMapType = None
-	currentMapSide = None
+	currentMapType = "escort"
+	currentMapSide = "offense"
 	
 	previousMap = [None]
 	previousMapType = None
