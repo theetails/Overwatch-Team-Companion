@@ -143,7 +143,8 @@ class MapInfo(GameObject):
 		thisMap.append("single_hero")
 		
 		optionsToSend = ["options", thisMap]
-		broadcaster.publish(broadcaster.subscriptionString, optionsToSend)
+		if (broadcaster != "debug"):
+			broadcaster.publish(broadcaster.subscriptionString, optionsToSend)
 			
 			
 			

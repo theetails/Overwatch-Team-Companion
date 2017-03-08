@@ -13,10 +13,9 @@ class Game:
 		print("Initialized")
 	
 	def main(self, broadcaster):
-		screenImg = ImageGrab.grab(bbox=None)
-		screenImgArray = np.asarray(screenImg)
+		screenImgArray = self.getScreen()
 		currentTime = str(int(time.time()))
-		currentView = self.heroes.main(screenImgArray, currentTime, broadcaster) #getHeroes - return View
+		currentView = self.heroes.main(screenImgArray, currentTime) #getHeroes - return View
 		
 		if (currentView == "Tab"):
 			sleepTime = 2
@@ -49,3 +48,7 @@ class Game:
 				self.heroes.broadcastHeroes(broadcaster)
 			
 		return sleepTime
+		
+	def getScreen(self):
+		screenImg = ImageGrab.grab(bbox=None)
+		return np.asarray(screenImg)

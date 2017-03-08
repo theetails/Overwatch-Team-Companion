@@ -16,7 +16,7 @@ class AllHeroes(GameObject):
 		for x in range(1,13):
 			self.heroesDictionary[x] = Hero(x)
 	
-	def main(self, screenImageArray, currentTime, broadcaster):
+	def main(self, screenImageArray, currentTime):
 		firstHero = self.heroesDictionary[1]
 		tabView = self.identifyHero(screenImageArray, firstHero, "Tab")
 		if (tabView == False):
@@ -112,14 +112,17 @@ class AllHeroes(GameObject):
 		
 	def broadcastHeroes(self, broadcaster):
 		publishList = ["heroes",self.heroesList]
-		broadcaster.publish(broadcaster.subscriptionString, publishList)
+		if (broadcaster != "debug"):
+			broadcaster.publish(broadcaster.subscriptionString, publishList)
+		
 	
 	def clearEnemyHeroes(self, broadcaster):
 		for heroNumber, hero in self.heroesDictionary.items():
 			if (heroNumber in range(7,13)):
 				hero.clearHero()
 		self.heroesToList()
-		self.broadcastHeroes(broadcaster)
+		if (broadcaster != "debug"):
+			self.broadcastHeroes(broadcaster)
 		
 	def changeHeroes(self, incomingHeroes):
 		incomingHerosDictionary = {}

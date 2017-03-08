@@ -49,7 +49,7 @@ class AppController(ApplicationSession):
 #supplementary functions
 
 def createHeroReferences():
-	thisGameObject = GameObject()
+	thisGameObject = Game()
 
 	referenceImagesFile = open('Reference\\HeroImageList.txt','w')
 	path = "Reference\\Image Sources"
@@ -58,15 +58,17 @@ def createHeroReferences():
 		imagePath = path+"/"+file
 		sourceImage = Image.open(imagePath)
 		sourceImageArray = np.array(sourceImage)
-		thresholdImageArray = thisGameObject.threshold(sourceImageArray)
+		thresholdImageArray = thisGameObject.heroes.threshold(sourceImageArray)
 		sourceImageList = str(thresholdImageArray.tolist())
 		lineToWrite = file[:-4]+'::'+sourceImageList+'\n'
 		referenceImagesFile.write(lineToWrite)
 
 def createImagesForHeroReference():
-	thisGameObject = GameObject()
-	thisGameObject.main()
-	for hero in thisGameObject.heroes:
+	thisGameObject = Game()
+	screenImgArray = thisGameObject.getScreen()
+	for heroNumber in range(1,13):
+		hero = thisGameObject.heroes.heroesDictionary[heroNumber]
+		thisGameObject.heroes.identifyHero(screenImgArray, hero, "Tab") # "Tab" or "Hero Select"
 		hero.saveDebugData("for_reference")
 
 def createImagesForMapReference(): #needs reworked
