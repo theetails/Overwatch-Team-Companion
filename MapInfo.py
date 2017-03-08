@@ -18,8 +18,11 @@ class MapInfo(GameObject):
 	
 	currentImageArray = None
 	potential = None
+	thisMapPotential = None
 	previousImageArray = None
 	previousPotential = None
+	
+	imageThreshold = 1900
 	
 	def __init__(self):
 		self.mapReferences = self.readReferences("Reference\\MapImageList.txt")
@@ -37,9 +40,10 @@ class MapInfo(GameObject):
 		self.currentImageArray = thisMapArray
 		self.previousPotential = self.potential
 		self.potential = potential
+		self.thisMapPotential = potential[thisMap]
 		
 		print(potential[thisMap])
-		if (potential[thisMap] > 1900):
+		if (potential[thisMap] > self.imageThreshold):
 			if (thisMap == "lijiang tower"):
 				thisMap = self.getMap(screenImgArray, "lijiang")
 				potential = self.whatImageIsThis(thisMap, self.mapReferencesLijiang)

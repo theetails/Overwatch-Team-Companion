@@ -28,7 +28,8 @@ class Game:
 			
 			mapIdentified = self.map.identifyMap(screenImgArray) #check Map, return if change
 			sideIdentified = self.map.identifySide(screenImgArray)
-			self.map.saveDebugData(currentTime)
+			if (self.map.thisMapPotential < self.map.imageThreshold):
+				self.map.saveDebugData(currentTime)
 			if (mapIdentified or sideIdentified):
 				self.map.broadcastOptions(broadcaster)
 			if (mapIdentified):
