@@ -12,15 +12,15 @@ class AppUI(tkinter.Tk):
 		self.geometry('{}x{}'.format(self.width,self.height))
 		self.loop = loop
 		self.tasks = []
-		self.currentGroupIDWindow = None
+		self.groupIDDisplayWindow = None
 		self.thisAppController = thisAppController
 		self.updater(interval)
 		
 	async def startUI(self):
-		# Code to add widgets will go here...
+		self.resizable(width=False, height=False)
 		self.title("Main Menu")
 		self.mainMenuWindow = tkinter.Frame(self, width=self.width, height=self.height)
-		self.mainMenuWindow.pack()
+		self.mainMenuWindow.pack(fill="both", expand=True, padx=20, pady=20)
 		startMainFunctionButton = tkinter.Button (self.mainMenuWindow, text = "Start Game Watcher", command = self.getGroupID).pack(fill = "x")
 		createHeroReferenceImagesButton = tkinter.Button (self.mainMenuWindow, text = "Hero Reference: Create Images").pack(fill = "x")
 		createHeroReferencesButton = tkinter.Button (self.mainMenuWindow, text = "Hero Reference: Create TXT").pack(fill = "x")
@@ -29,17 +29,17 @@ class AppUI(tkinter.Tk):
 	
 	def getGroupID(self):
 		self.mainMenuWindow.destroy()
-		groupIDWindow = tkinter.Frame(self, width=self.width, height=self.height)
-		groupIDWindow.pack(side="top")
 		self.title("Group ID Input")
-		groupIDLabel = tkinter.Label(groupIDWindow, text = "Group ID")
-		groupIDLabel.pack(side="left")
-		groupIDEntry = tkinter.Entry(groupIDWindow, width = 20)
-		groupIDEntry.pack(side="left")
-		submitGroupID = tkinter.Button(groupIDWindow, text = "Submit", command = lambda: self.checkGroupID(groupIDEntry))
-		submitGroupID.pack(side="left")
 		errorWindow = tkinter.Frame(self)
-		errorWindow.pack(side="top")
+		errorWindow.pack(side="bottom", fill=tkinter.X, expand=True, padx=20)
+		groupIDEntryWindow = tkinter.Frame(self, width=self.width, height=self.height)
+		groupIDEntryWindow.pack(side="bottom", fill=tkinter.X, expand=True, padx=20)
+		groupIDEntryLabel = tkinter.Label(groupIDEntryWindow, text = "Group ID")
+		groupIDEntryLabel.pack(side="left")
+		groupIDEntry = tkinter.Entry(groupIDEntryWindow, width = 20)
+		groupIDEntry.pack(side="left")
+		submitGroupID = tkinter.Button(groupIDEntryWindow, text = "Submit", command = lambda: self.checkGroupID(groupIDEntry))
+		submitGroupID.pack(side="left")
 		self.errorMessageLabel = tkinter.Label(errorWindow, text = "", fg="red")
 		self.errorMessageLabel.pack()
 		
@@ -59,19 +59,19 @@ class AppUI(tkinter.Tk):
 			self.tasks = []
 			self.currentGroupID = entryText
 			self.errorMessageLabel["text"] = ""
-			self.inGameUI(entryText)
+			self.inRoomUI(entryText)
 			self.tasks.append(self.loop.create_task(self.thisAppController.subscribeToID(entryText)))
 			
 		else:
 			self.errorMessageLabel["text"] = "Only Alphanumeric Characters"		
 			
-	def inGameUI(self, entryText):
-		if (self.currentGroupIDWindow == None):
-			self.currentGroupIDWindow = tkinter.Frame(self)
-			self.currentGroupIDWindow.pack(side="top")
-			groupIDPreLabel = tkinter.Label(self.currentGroupIDWindow, text = "Current Room: ")
-			groupIDPreLabel.pack(side="left")
-			self.groupIDLabel = tkinter.Label(self.currentGroupIDWindow, text = entryText)
+	def inRoomUI(self, entryText):
+		if (self.groupIDDisplayWindow == None):
+			self.groupIDDisplayWindow = tkinter.Frame(self)
+			self.groupIDDisplayWindow.pack(side="top", fill=tkinter.X, expand=True, padx=20)
+			groupIDDisplayLabel = tkinter.Label(self.groupIDDisplayWindow, text = "Current Room: ")
+			groupIDDisplayLabel.pack(side="left")
+			self.groupIDLabel = tkinter.Label(self.groupIDDisplayWindow, text = entryText)
 			self.groupIDLabel.pack(side="left")
 		else:
 			self.groupIDLabel['text'] = entryText
