@@ -5,21 +5,18 @@ import subprocess as sp
 import asyncio
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
+from AppUI import AppUI
 from Game import Game
 from GameObject import GameObject #not for main function
-	
+
 class AppController(ApplicationSession):
 
-	
-		
-	@asyncio.coroutine
-	async def onJoin(self, details):
-		
-		#Initialize Game Object & obtain Subscription String
-		self.gameObject = Game()
-		subscriptionID = input("Enter your Session ID:")
+	def unsubscribeFromCurrent(self):
+		self.subscription.unsubscribe()
+		self.subscriptionString = None
+
+	async def subscribeToID(self, subscriptionID):
 		self.subscriptionString	= 'com.voxter.teambuilder.'+subscriptionID
-		tmp = sp.call('cls',shell=True)
 		
 		# Subscribe to the room so we receive events
 		def onEvent(msg1, msg2=None):
@@ -35,19 +32,20 @@ class AppController(ApplicationSession):
 			elif (msg1 == "heroes"):
 				self.gameObject.heroes.changeHeroes(msg2)
 		
-		await self.subscribe(onEvent, self.subscriptionString)
-		
-		#self.publish(u'subscriptionString',"test")
-		#print ("published")
-		#asyncio.get_event_loop().stop()
-		
-		
+		self.subscription = await self.subscribe(onEvent, self.subscriptionString)
+		self.gameObject = Game(self.uiObject)
 		while True:
 			sleepTime = self.gameObject.main(self)
 			await asyncio.sleep(sleepTime)
-
+	
+	async def onJoin(self, details):
+		self.loop = asyncio.get_event_loop()
+		
+		#Initialize Game Object & obtain Subscription String
+		self.uiObject = AppUI(self, self.loop)
+		await self.uiObject.startUI()
+			
 #supplementary functions
-
 def createHeroReferences():
 	thisGameObject = Game()
 
@@ -123,15 +121,15 @@ def unitTestReferences(): #needs reworked
 
 def mainFunction():
 	runner = ApplicationRunner(url="ws://voxter.mooo.com:8080/ws", realm="com.voxter.teambuilder")
-	runner.run(AppController) 
-
+	runner.run(AppController)
+	
 #createImagesForHeroReference()
 #createHeroReferences()
 #createImagesForMapReference()
 #createMapReferences()
 #unitTestReferences()
 mainFunction()
-
+#AppUI()
 '''
 dual assault points:
 17 x 17

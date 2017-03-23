@@ -10,7 +10,6 @@ class Game:
 	def __init__(self):
 		self.heroes = AllHeroes()
 		self.map = MapInfo()
-		print("Initialized")
 	
 	def main(self, broadcaster):
 		screenImgArray = self.getScreen()
