@@ -33,7 +33,9 @@ class AppController(ApplicationSession):
 				self.gameObject.heroes.changeHeroes(msg2)
 		
 		self.subscription = await self.subscribe(onEvent, self.subscriptionString)
-		self.gameObject = Game(self.uiObject)
+		self.gameObject = Game()
+		self.publish(self.subscriptionString, "Hello")
+		await asyncio.sleep(.5)
 		while True:
 			sleepTime = self.gameObject.main(self)
 			await asyncio.sleep(sleepTime)
@@ -120,6 +122,7 @@ def unitTestReferences(): #needs reworked
 		print ("")
 
 def mainFunction():
+	sp.call('cls',shell=True)
 	runner = ApplicationRunner(url="ws://voxter.mooo.com:8080/ws", realm="com.voxter.teambuilder")
 	runner.run(AppController)
 	
