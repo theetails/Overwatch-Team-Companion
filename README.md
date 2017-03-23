@@ -7,6 +7,6 @@ After installation, you can create a new environment with the required dependenc
 1. Open command prompt and navigate to this app's directory (overwatch-python)
 2. Create a conda environment using "conda env create -f conda_environment.yml"
 3. Activate the new environment: "activate OverwatchApp"
-4. Start the app: "python overwatch_app.py"
+4. Start the app: "pythonw overwatch_app.py"
 
 If you need to break out of the app without closing the command prompt, press Ctrl + C. (Possibly multiple times)
