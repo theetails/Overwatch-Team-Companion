@@ -11,7 +11,8 @@ class AllHeroes(GameObject):
 	heroesDictionary = {}
 	heroesList = []
 	
-	def __init__(self):
+	def __init__(self, debugMode):
+		self.debugMode = debugMode
 		self.characterReferences = self.readReferences("Reference\\HeroImageList.txt")
 		for x in range(1,13):
 			self.heroesDictionary[x] = Hero(x)
@@ -45,7 +46,7 @@ class AllHeroes(GameObject):
 			else:
 				print(thisHero.currentHero)
 		
-		if (len(failedHeroes) > 0):
+		if ((len(failedHeroes) > 0) and self.debugMode):
 			failedHeroes.append(1)
 			for heroNumber in failedHeroes:
 				self.heroesDictionary[heroNumber].saveDebugData(currentTime)

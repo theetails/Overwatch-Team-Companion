@@ -10,10 +10,15 @@ from Game import Game
 from GameObject import GameObject #not for main function
 
 class AppController(ApplicationSession):
-
-	def unsubscribeFromCurrent(self):
-		self.subscription.unsubscribe()
-		self.subscriptionString = None
+	async def onJoin(self, details):
+		#Set debugMode to True if you want to save images in debug folder
+		self.debugMode = False
+		
+		self.loop = asyncio.get_event_loop()
+		
+		#Initialize Game Object & obtain Subscription String
+		self.uiObject = AppUI(self, self.loop)
+		await self.uiObject.startUI()
 
 	async def subscribeToID(self, subscriptionID):
 		self.subscriptionString	= 'com.voxter.teambuilder.'+subscriptionID
@@ -33,20 +38,17 @@ class AppController(ApplicationSession):
 				self.gameObject.heroes.changeHeroes(msg2)
 		
 		self.subscription = await self.subscribe(onEvent, self.subscriptionString)
-		self.gameObject = Game()
+		self.gameObject = Game(self.debugMode)
 		self.publish(self.subscriptionString, "Hello")
 		await asyncio.sleep(.5)
 		while True:
 			sleepTime = self.gameObject.main(self)
 			await asyncio.sleep(sleepTime)
-	
-	async def onJoin(self, details):
-		self.loop = asyncio.get_event_loop()
-		
-		#Initialize Game Object & obtain Subscription String
-		self.uiObject = AppUI(self, self.loop)
-		await self.uiObject.startUI()
 			
+	def unsubscribeFromCurrent(self):
+		self.subscription.unsubscribe()
+		self.subscriptionString = None
+
 #supplementary functions
 def createHeroReferences():
 	thisGameObject = Game()

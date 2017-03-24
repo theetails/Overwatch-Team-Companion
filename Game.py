@@ -7,9 +7,10 @@ from MapInfo import MapInfo
 
 class Game:
 
-	def __init__(self):
-		self.heroes = AllHeroes()
-		self.map = MapInfo()
+	def __init__(self, debugMode):
+		self.debugMode = debugMode
+		self.heroes = AllHeroes(debugMode)
+		self.map = MapInfo(debugMode)
 	
 	def main(self, broadcaster):
 		screenImgArray = self.getScreen()
@@ -27,7 +28,7 @@ class Game:
 			
 			mapIdentified = self.map.identifyMap(screenImgArray) #check Map, return if change
 			sideIdentified = self.map.identifySide(screenImgArray)
-			if (self.map.thisMapPotential < self.map.imageThreshold):
+			if ((self.map.thisMapPotential < self.map.imageThreshold) and self.debugMode):
 				self.map.saveDebugData(currentTime)
 			if (mapIdentified or sideIdentified):
 				self.map.broadcastOptions(broadcaster)

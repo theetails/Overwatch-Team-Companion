@@ -24,7 +24,8 @@ class MapInfo(GameObject):
 	
 	imageThreshold = 1900
 	
-	def __init__(self):
+	def __init__(self, debugMode):
+		self.debugMode = debugMode
 		self.mapReferences = self.readReferences("Reference\\MapImageList.txt")
 		self.mapReferencesLijiang = self.readReferences("Reference\\MapImageListLijiang.txt")
 	
