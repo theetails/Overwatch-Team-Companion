@@ -57,6 +57,7 @@ class AppUI(tkinter.Tk):
 				task.cancel()
 				self.thisAppController.unsubscribeFromCurrent()
 			self.tasks = []
+			self.wm_state('iconic')
 			self.currentGroupID = entryText
 			self.errorMessageLabel["text"] = ""
 			self.inRoomUI(entryText)
