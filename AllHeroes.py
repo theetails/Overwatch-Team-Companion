@@ -17,25 +17,12 @@ class AllHeroes(GameObject):
 		for x in range(1,13):
 			self.heroesDictionary[x] = Hero(x)
 	
-	def main(self, screenImageArray, currentTime):
-		firstHero = self.heroesDictionary[1]
-		tabView = self.identifyHero(screenImageArray, firstHero, "Tab")
-		if (tabView == False):
-			characterSelectView = self.identifyHero(screenImageArray, firstHero, "Character Select")
-			if (characterSelectView == False):
-				return "None"
-			else:
-				#Hero Select View
-				heroRange = range(2,7)
-				currentView = "Hero Select"
-		else:
-			#Tab View
-			heroRange = range(2,13)
-			currentView = "Tab"
-		sp.call('cls',shell=True)
-		print("Current View: " + currentView)
-		print(firstHero.currentHero)
-		
+	def main(self, screenImageArray, currentTime, currentView):
+		if (currentView == "Hero Select"):
+			heroRange = range(1,7)
+		elif (currentView == "Tab"):
+			heroRange = range(1,13)
+
 		failedHeroes = []
 		for heroNumber in heroRange:
 			thisHero = self.heroesDictionary[heroNumber]

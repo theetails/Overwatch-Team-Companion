@@ -24,7 +24,8 @@ class AppUI(tkinter.Tk):
 		startMainFunctionButton = tkinter.Button (self.mainMenuWindow, text = "Start Game Watcher", command = self.getGroupID).pack(fill = "x")
 		createHeroReferenceImagesButton = tkinter.Button (self.mainMenuWindow, text = "Hero Reference: Create Images", command = self.createHeroImages).pack(fill = "x")
 		createHeroReferencesButton = tkinter.Button (self.mainMenuWindow, text = "Hero Reference: Create TXT", command = self.createHeroReference).pack(fill = "x")
-		createMapReferenceImagesButton = tkinter.Button (self.mainMenuWindow, text = "Map Reference: Create Image", command = self.createMapImage).pack(fill = "x")
+		createMapReferenceImagesHeroSelectButton = tkinter.Button (self.mainMenuWindow, text = "Map Reference -Hero Select: Create Image", command = self.createMapImageHeroSelect).pack(fill = "x")
+		createMapReferenceImagesTabButton = tkinter.Button (self.mainMenuWindow, text = "Map Reference -Tab: Create Image", command = self.createMapImageTab).pack(fill = "x")
 		createMapReferencesButton = tkinter.Button (self.mainMenuWindow, text = "Map Reference: Create TXT", command = self.createMapReference).pack(fill = "x")
 	
 	def getGroupID(self):
@@ -83,8 +84,11 @@ class AppUI(tkinter.Tk):
 	def createHeroReference(self):
 		self.thisAppController.createHeroReferences()
 		
-	def createMapImage(self):
-		self.thisAppController.createImagesForMapReference()
+	def createMapImageHeroSelect(self):
+		self.thisAppController.createImagesForMapReferenceHeroSelect()
+		
+	def createMapImageTab(self):
+		self.thisAppController.createImagesForMapReferenceTab()
 		
 	def createMapReference(self):
 		self.thisAppController.createMapReferences()

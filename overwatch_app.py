@@ -75,44 +75,33 @@ class AppController(ApplicationSession):
 			thisGameObject.heroes.identifyHero(screenImgArray, hero, "Tab") # "Tab" or "Hero Select"
 			hero.saveDebugData("for_reference")
 
-	def createImagesForMapReference(self):
+	def createImagesForMapReferenceHeroSelect(self):
 		thisGameObject = Game(self.debugMode)
 		screenImgArray = thisGameObject.getScreen()
 		thisGameObject.map.identifyMap(screenImgArray)
 		thisGameObject.map.saveDebugData("for_reference")
 		
-		
-		
-		# screenImg = ImageGrab.grab(bbox=None)
-		# screenImgArray = np.asarray(screenImg)
-		# thisMap = MyComponent().getMap(screenImgArray, "reference")
+	def createImagesForMapReferenceTab(self):
+		thisGameObject = Game(self.debugMode)
+		screenImgArray = thisGameObject.getScreen()
+		thisGameObject.map.currentImageArray = thisGameObject.map.getMap(screenImgArray, "tab", False)
+		thisGameObject.map.saveDebugData("for_reference")
 
 	def createMapReferences(self):
-		referenceImagesFile = open('Reference\\MapImageList.txt','w')
-		path = "Reference\\Map Name Image Sources"
-		referenceImages = [image for image in listdir(path)]
-		for file in referenceImages:
-			imagePath = path+"/"+file
-			sourceImage = Image.open(imagePath)
-			sourceImageArray = np.array(sourceImage)
-			# thresholdImageArray = MyComponent().threshold(sourceImageArray) #images are currently already thresholded
-			sourceImageList = str(sourceImageArray.tolist())
-			lineToWrite = file[:-4]+'::'+sourceImageList+'\n'
-			referenceImagesFile.write(lineToWrite)
-		
-		#repeat for Lijiang
-		referenceImagesFile2 = open('Reference\\MapImageListLijiang.txt','w')
-		path = "Reference\\Lijiang Map Name Image Sources"
-		referenceImages = [image for image in listdir(path)]
-		for file in referenceImages:
-			imagePath = path+"/"+file
-			sourceImage = Image.open(imagePath)
-			sourceImageArray = np.array(sourceImage)
-			#thresholdImageArray = MyComponent().threshold(sourceImageArray) #images are currently already thresholded
-			sourceImageList = str(sourceImageArray.tolist())
-			lineToWrite = file[:-4]+'::'+sourceImageList+'\n'
-			referenceImagesFile2.write(lineToWrite)
-
+		#Hero Select
+		referenceString = ['Reference\\MapImageList.txt', 'Reference\\MapImageListLijiang.txt', 'Reference\\MapImageListTab.txt']
+		path = ["Reference\\Map Name Image Sources", "Reference\\Lijiang Map Name Image Sources", "Reference\\Map Name Tab Image Sources"]
+		for x  in range(0,3):
+			referenceImagesFile = open(referenceString[x],'w')
+			referenceImages = [image for image in listdir(path[x])]
+			for file in referenceImages:
+				imagePath = path[x]+"/"+file
+				sourceImage = Image.open(imagePath)
+				sourceImageArray = np.array(sourceImage)
+				# thresholdImageArray = MyComponent().threshold(sourceImageArray) #images are currently already thresholded
+				sourceImageList = str(sourceImageArray.tolist())
+				lineToWrite = file[:-4]+'::'+sourceImageList+'\n'
+				referenceImagesFile.write(lineToWrite)
 
 
 	def unitTestReferences(self): #needs reworked

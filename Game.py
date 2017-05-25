@@ -13,22 +13,24 @@ class Game:
 		self.map = MapInfo(debugMode)
 	
 	def main(self, broadcaster):
+		
 		screenImgArray = self.getScreen()
 		currentTime = str(int(time.time()))
-		currentView = self.heroes.main(screenImgArray, currentTime) #getHeroes - return View
-		
-		if (currentView == "Tab"):
-			sleepTime = 2
+		currentView = self.map.main(screenImgArray)
+		if (currentView):
+			print(currentView)
+			if (currentView == "Tab"):
+				sleepTime = 2
+			elif (currentView == "Hero Select"):
+				sleepTime = 3
+			self.heroes.main(screenImgArray, currentTime, currentView)
 			
-			heroesChanged = self.heroes.checkForChange()
-			if (heroesChanged):
-				self.heroes.broadcastHeroes(broadcaster)
-		elif (currentView == "Hero Select"):
-			sleepTime = 3
-			
-			mapIdentified = self.map.identifyMap(screenImgArray) #check Map, return if change
-			sideIdentified = self.map.identifySide(screenImgArray)
-			if ((self.map.thisMapPotential < self.map.imageThreshold) and self.debugMode):
+			mapIdentified = self.map.mapChange
+			if (currentView == "Hero Select"):
+				sideIdentified = self.map.identifySide(screenImgArray)
+			else:
+				sideIdentified = False
+			if ((self.map.thisMapPotential < self.map.imageThreshold[currentView]) and self.debugMode):
 				self.map.saveDebugData(currentTime)
 			if (mapIdentified or sideIdentified):
 				self.map.broadcastOptions(broadcaster)
