@@ -9,4 +9,6 @@ After installation, you can create a new environment with the required dependenc
 3. Activate the new environment: "activate OverwatchApp"
 4. Start the app: "pythonw overwatch_app.py"
 
+After the initial setup, you only need to do steps 1,3, and 4
+
 If you need to break out of the app without closing the command prompt, press Ctrl + C. (Possibly multiple times)
