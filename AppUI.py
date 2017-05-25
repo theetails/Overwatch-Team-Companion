@@ -22,10 +22,10 @@ class AppUI(tkinter.Tk):
 		self.mainMenuWindow = tkinter.Frame(self, width=self.width, height=self.height)
 		self.mainMenuWindow.pack(fill="both", expand=True, padx=20, pady=20)
 		startMainFunctionButton = tkinter.Button (self.mainMenuWindow, text = "Start Game Watcher", command = self.getGroupID).pack(fill = "x")
-		createHeroReferenceImagesButton = tkinter.Button (self.mainMenuWindow, text = "Hero Reference: Create Images").pack(fill = "x")
-		createHeroReferencesButton = tkinter.Button (self.mainMenuWindow, text = "Hero Reference: Create TXT").pack(fill = "x")
-		createMapReferenceImagesButton = tkinter.Button (self.mainMenuWindow, text = "Map Reference: Create Images").pack(fill = "x")
-		createMapReferencesButton = tkinter.Button (self.mainMenuWindow, text = "Map Reference: Create TXT").pack(fill = "x")
+		createHeroReferenceImagesButton = tkinter.Button (self.mainMenuWindow, text = "Hero Reference: Create Images", command = self.createHeroImages).pack(fill = "x")
+		createHeroReferencesButton = tkinter.Button (self.mainMenuWindow, text = "Hero Reference: Create TXT", command = self.createHeroReference).pack(fill = "x")
+		createMapReferenceImagesButton = tkinter.Button (self.mainMenuWindow, text = "Map Reference: Create Image", command = self.createMapImage).pack(fill = "x")
+		createMapReferencesButton = tkinter.Button (self.mainMenuWindow, text = "Map Reference: Create TXT", command = self.createMapReference).pack(fill = "x")
 	
 	def getGroupID(self):
 		self.mainMenuWindow.destroy()
@@ -76,7 +76,18 @@ class AppUI(tkinter.Tk):
 			self.groupIDLabel.pack(side="left")
 		else:
 			self.groupIDLabel['text'] = entryText
+	
+	def createHeroImages(self):
+		self.thisAppController.createImagesForHeroReference()
 		
+	def createHeroReference(self):
+		self.thisAppController.createHeroReferences()
+		
+	def createMapImage(self):
+		self.thisAppController.createImagesForMapReference()
+		
+	def createMapReference(self):
+		self.thisAppController.createMapReferences()
 				
 	def updater(self, interval):
 		self.update()
