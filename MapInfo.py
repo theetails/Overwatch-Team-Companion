@@ -7,7 +7,7 @@ from GameObject import GameObject
 
 class MapInfo(GameObject):
 	
-	mapDictionary = {"dorado": "escort", "eichenwalde": "transition", "hanamura": "assault", "hollywood": "transition", "ilios": "control", "king's row": "transition", "lijiang": "control", "nepal": "control", "numbani": "transition", "oasis": "control", "route66": "escort", "temple of anubis": "assault", "volskaya industries": "assault", "watchpoint gibraltar": "escort"}
+	mapDictionary = {"dorado": "escort", "eichenwalde": "transition", "hanamura": "assault", "hollywood": "transition", "ilios": "control", "king's row": "transition", "lijiang": "control", "nepal": "control", "numbani": "transition", "oasis": "control", "route66": "escort", "temple of anubis": "assault", "volskaya industries": "assault", "watchpoint gibraltar": "escort", "black forest": "arena", "castillo": "arena", "ecopoint antarctica": "arena", "necropolis": "arena"}
 	currentMap = [None]
 	currentMapType = "escort"
 	currentMapSide = "offense"
@@ -106,9 +106,9 @@ class MapInfo(GameObject):
 		resizedImageArray = imresize(mapImageArray,(19,115))
 		
 		newImageArray = self.threshold(resizedImageArray)
-		if (mode == "reference"):
-			img = Image.fromarray(newImageArray)
-			img.save("C:\\Users\\Voxter\\Desktop\\Overwatch Python App\\Test\\map.png", "PNG")
+		# if (mode == "reference"):
+			# img = Image.fromarray(newImageArray)
+			# img.save("C:\\Users\\Voxter\\Desktop\\Overwatch Python App\\Test\\map.png", "PNG")
 		return newImageArray
 	
 	def identifySide(self, imgArray):
