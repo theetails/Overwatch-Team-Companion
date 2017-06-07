@@ -7,7 +7,7 @@ class AppUI(tkinter.Tk):
 		super().__init__()
 		self.protocol("WM_DELETE_WINDOW", self.close)
 		self.width = 300
-		self.height = 200
+		self.height = 240
 		self.currentGroupID = None
 		self.geometry('{}x{}'.format(self.width,self.height))
 		self.loop = loop
@@ -26,6 +26,7 @@ class AppUI(tkinter.Tk):
 		createHeroReferencesButton = tkinter.Button (self.mainMenuWindow, text = "Hero Reference: Create TXT", command = self.createHeroReference).pack(fill = "x")
 		createMapReferenceImagesHeroSelectButton = tkinter.Button (self.mainMenuWindow, text = "Map Reference -Hero Select: Create Image", command = self.createMapImageHeroSelect).pack(fill = "x")
 		createMapReferenceImagesTabButton = tkinter.Button (self.mainMenuWindow, text = "Map Reference -Tab: Create Image", command = self.createMapImageTab).pack(fill = "x")
+		createMapReferenceImagesObjectivesButton = tkinter.Button (self.mainMenuWindow, text = "Map Reference -Objectives: Create Image", command = self.createMapImageObjective).pack(fill = "x")
 		createMapReferencesButton = tkinter.Button (self.mainMenuWindow, text = "Map Reference: Create TXT", command = self.createMapReference).pack(fill = "x")
 	
 	def getGroupID(self):
@@ -89,6 +90,9 @@ class AppUI(tkinter.Tk):
 		
 	def createMapImageTab(self):
 		self.thisAppController.createImagesForMapReferenceTab()
+		
+	def createMapImageObjective(self):
+		self.thisAppController.createImagesForMapReferenceObjective()
 		
 	def createMapReference(self):
 		self.thisAppController.createMapReferences()

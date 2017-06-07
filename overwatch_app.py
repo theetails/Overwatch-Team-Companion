@@ -78,27 +78,34 @@ class AppController(ApplicationSession):
 	def createImagesForMapReferenceHeroSelect(self):
 		thisGameObject = Game(self.debugMode)
 		screenImgArray = thisGameObject.getScreen()
-		thisGameObject.map.identifyMap(screenImgArray)
+		thisGameObject.map.currentImageArray = thisGameObject.map.getMap(screenImgArray, "Hero Select", False)
 		thisGameObject.map.saveDebugData("for_reference")
 		
 	def createImagesForMapReferenceTab(self):
 		thisGameObject = Game(self.debugMode)
 		screenImgArray = thisGameObject.getScreen()
-		thisGameObject.map.currentImageArray = thisGameObject.map.getMap(screenImgArray, "tab", False)
+		thisGameObject.map.currentImageArray = thisGameObject.map.getMap(screenImgArray, "Tab", False)
 		thisGameObject.map.saveDebugData("for_reference")
+		
+	def createImagesForMapReferenceObjective(self):
+		thisGameObject = Game(self.debugMode)
+		screenImgArray = thisGameObject.getScreen()
+		thisGameObject.map.currentMap[0]="oasis"
+		thisGameObject.map.identifyObjectiveProgress(screenImgArray, "for_reference")
 
 	def createMapReferences(self):
-		#Hero Select
-		referenceString = ['Reference\\MapImageList.txt', 'Reference\\MapImageListLijiang.txt', 'Reference\\MapImageListTab.txt']
-		path = ["Reference\\Map Name Image Sources", "Reference\\Lijiang Map Name Image Sources", "Reference\\Map Name Tab Image Sources"]
-		for x  in range(0,3):
+		thisGameObject = Game(self.debugMode)
+		
+		referenceString = ['Reference\\MapImageList.txt', 'Reference\\MapImageListLijiang.txt', 'Reference\\MapImageListTab.txt', 'Reference\\ObjectiveListAssault.txt', 'Reference\\ObjectiveListControl.txt', 'Reference\\GameEnd.txt']
+		path = ["Reference\\Map Name Image Sources", "Reference\\Lijiang Map Name Image Sources", "Reference\\Map Name Tab Image Sources", "Reference\\Objective-Assault Sources", "Reference\\Objective-Control Sources", "Reference\\Game End Sources"]
+		for x  in range(0,6):
 			referenceImagesFile = open(referenceString[x],'w')
 			referenceImages = [image for image in listdir(path[x])]
 			for file in referenceImages:
 				imagePath = path[x]+"/"+file
 				sourceImage = Image.open(imagePath)
 				sourceImageArray = np.array(sourceImage)
-				# thresholdImageArray = MyComponent().threshold(sourceImageArray) #images are currently already thresholded
+				thresholdImageArray = thisGameObject.map.threshold(sourceImageArray)
 				sourceImageList = str(sourceImageArray.tolist())
 				lineToWrite = file[:-4]+'::'+sourceImageList+'\n'
 				referenceImagesFile.write(lineToWrite)
@@ -151,17 +158,22 @@ teams.js
 	Allow two secondary healers instead of a primary
 	Smart Flanker selection (flanker could also be a front line)
 	Same for Main Tanks / Secondary
-overwatch_app.py	
-	Detect Screen Resolution - Currently only 1080p
-	Detect Screen Color Differences
-	Identify current objective - transition maps
-	Keep track of Game Time
-	Identify Objective Progress
-	Streaming Integration
+	Sound Alerts (?)
+laravel
 	Stats Tracking
 	Login System
-	Sound Alerts (?)
+overwatch_app.py	
+	Identify Objective Progress
+		Initial Lock on Escort
+		Keep track of progress
+		Add Capture the Flag
+	Keep track of Game Time
+	Login System
+	Detect Screen Resolution - Currently only 1080p
+	Detect Screen Color Differences
+	Streaming Integration
 	GUI
+	
 
 '''
 

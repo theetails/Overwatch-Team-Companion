@@ -64,7 +64,6 @@ class AllHeroes(GameObject):
 			else :
 				thisRow = 0
 			currentHeroesList[thisRow].append(hero.getHeroNumber())
-		
 		if (currentHeroesList != self.heroesList):
 			self.heroesList = currentHeroesList
 			return True
