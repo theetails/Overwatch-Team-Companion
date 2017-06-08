@@ -3,6 +3,7 @@ import numpy as np
 from scipy.misc import imresize
 import operator
 import subprocess as sp
+from functools import reduce
 from pprint import pprint #temporary for debugging
 
 from GameObject import GameObject
@@ -37,6 +38,7 @@ class MapInfo(GameObject):
 		self.gameEndReference = self.readReferences("Reference\\GameEnd.txt")
 		
 		self.resetObjectiveProgress()
+		self.calculateAssaultProgressPixels()
 	
 	def main(self, screenImageArray):
 		# check if Tab View
@@ -59,6 +61,25 @@ class MapInfo(GameObject):
 		self.objectiveProgress["gameEnd"] = False
 		self.objectiveProgress["unlocked"] = False
 		self.objectiveProgress["gameOver"] = False
+	
+	def calculateAssaultProgressPixels(self):
+		assaultRadius = 23 #px
+		self.assaultPixelsToCheck = []
+		centerPoints = [[925,120],[1000,120]]
+		pointNumber = 0
+		for centerPoint in centerPoints:
+			self.assaultPixelsToCheck.append([])
+			for percentage in range(0,100):
+				theta = -(percentage - 125)/(5/18)
+				xCoordinate = int((np.cos(np.deg2rad(theta)) * assaultRadius) + centerPoint[0])
+				if percentage > 50: #center isn't perfectly center
+					xCoordinate = xCoordinate -1
+				yCoordinate = int(-(np.sin(np.deg2rad(theta)) * assaultRadius) + centerPoint[1])
+				if percentage > 25 and percentage < 75: #center isn't perfectly center
+					yCoordinate = yCoordinate + 1
+				#print (str(percentage) + " " + str(theta) + " " + str(xCoordinate) + " " + str(yCoordinate))
+				self.assaultPixelsToCheck[pointNumber].append([xCoordinate,yCoordinate])
+			pointNumber = pointNumber + 1
 	
 	def mapType(self):
 		return self.mapDictionary[self.currentMap[0]]
@@ -191,7 +212,6 @@ class MapInfo(GameObject):
 			return False
 		
 		mapType = self.mapType()
-		dimensions = {}
 
 		if (mapType == "transition"):
 			#need to go from assault to escort
@@ -200,185 +220,215 @@ class MapInfo(GameObject):
 			placeholder = True
 		
 		if (mapType == "assault" or self.objectiveProgress["currentType"] == "assault"):
-
-			
-			#Assault Point 1
-			dimensions["startX"] = 918
-			dimensions["endX"] = 930
-			dimensions["startY"] = 114
-			dimensions["endY"] = 128
-			#color for side
-			pixelToCheck = imgArray[108][927]
-			#red: attack
-			#blue: defense
-			
-			newImageArray = self.cutAndThreshold(imgArray, dimensions)
-			potential = self.whatImageIsThis(newImageArray, self.assaultReference)
-			thisStatus = max(potential.keys(), key=(lambda k: potential[k]))
-			
-			if (potential[thisStatus] > self.imageThreshold["Assault"]):  #max 166?
-				#get current progress
-				if (thisStatus == "Done"):
-					if (mapType == "transition"):
-						self.objectiveProgress["currentType"] = "escort"
-					else:
-						#Assault Point 2
-						dimensions["startX"] = 991
-						dimensions["endX"] = 1003
-						dimensions["startY"] = 111
-						dimensions["endY"] = 125
-						pixelToCheck = imgArray[108][997]
-						newImageArray = self.cutAndThreshold(imgArray, dimensions)
-						potential = self.whatImageIsThis(newImageArray, self.assaultReference)
-						thisStatus = max(potential.keys(), key=(lambda k: potential[k]))
-			elif (mapType == "transition"):
-				dimensions["startX"] = 760
-				dimensions["endX"] = 772
-				dimensions["startY"] = 114
-				dimensions["endY"] = 128
-				newImageArray = self.cutAndThreshold(imgArray, dimensions)
-				potential = self.whatImageIsThis(newImageArray, self.assaultReference)
-				thisStatus = max(potential.keys(), key=(lambda k: potential[k]))
-				if (potential[thisStatus] > self.imageThreshold["Assault"] and (thisStatus == "Locked" or thisStatus == "Done")):
-					print("Transition to Escort")
-					self.objectiveProgress["currentType"] = "escort"
-				else:
-					self.identifyGameEnd(imgArray, mode)
-			else:
-				self.identifyGameEnd(imgArray, mode)
-				
-			print(thisStatus)
-			print(potential)
-			# if (thisStatus != "Locked"):
-				# thisSide = self.teamFromPixel(pixelToCheck)
-				# print(thisSide)
+			newImageArray = self.identifyAssaultObjectiveProgress(imgArray, mapType, mode)
 
 		if (mapType == "control" or self.objectiveProgress["currentType"] == "control"):
-			dimensions["startX"] = 952
-			dimensions["endX"] = 968
-			dimensions["startY"] = 78
-			dimensions["endY"] = 102
-			pixelToCheck = {}
-			pixelToCheck["current"] = imgArray[108][959]
-			pixelToCheck["left"] = {}
-			#pixelToCheck["left"][0] = imgArray[91][734] #what is this?
-			pixelToCheck["left"][0] = imgArray[91][774]
-			pixelToCheck["left"][1] = imgArray[91][814]
-			pixelToCheck["right"] = {}
-			pixelToCheck["right"][0] = imgArray[91][1146]
-			pixelToCheck["right"][1] = imgArray[91][1106]#far right
-			#pixelToCheck["right"][2] = imgArray[91][1186] # what is this?
+			newImageArray = self.identifyControlObjectiveProgress(imgArray, mode)
 			
-			newImageArray = self.cutAndThreshold(imgArray, dimensions)
-			potential = self.whatImageIsThis(newImageArray, self.controlReference)
-			thisStatus = max(potential.keys(), key=(lambda k: potential[k]))
-			
-			#max 384, lower limit: 250
-			if (potential[thisStatus] > self.imageThreshold["Control"]):
-				print(thisStatus)
-				print(potential)
-				if (thisStatus != "Locked"):
-					thisSide = self.teamFromPixel(pixelToCheck["current"])
-					print("Current Controller: " + thisSide)
-				for pixelIndex, thisPixel in pixelToCheck["left"].items():
-					teamResult = self.teamFromPixel(thisPixel)
-					if teamResult == "neither":
-						print("Our Team Progress: " + str(pixelIndex))
-						break
-				for pixelIndex, thisPixel in pixelToCheck["right"].items():
-					teamResult = self.teamFromPixel(thisPixel)
-					if teamResult == "neither":
-						print("Their Team Progress: " + str(pixelIndex))
-						break
-			else:
-				self.identifyGameEnd(imgArray, mode)
 		if (mapType == "escort" or self.objectiveProgress["currentType"] == "escort"):
-			if ("escortProgress" not in self.objectiveProgress):
-				self.objectiveProgress["escortProgress"] = []
-		
-		
-			if (mapType == "escort" and self.objectiveProgress["unlocked"] == False):
-				#check for lock symbol
-				dimensions["startX"] = 953
-				dimensions["endX"] = 965
-				dimensions["startY"] = 111
-				dimensions["endY"] = 125
-				
-				newImageArray = self.cutAndThreshold(imgArray, dimensions)
-				lockReference = {}
-				lockReference["Locked"] = self.assaultReference["Locked"]
-				potential = self.whatImageIsThis(newImageArray, lockReference)
-				
-				if (potential["Locked"] > self.imageThreshold["Assault"]):  #max 166?
-					print("Locked")
-					print(potential)
-					if (mode == "for_reference"):
-						path = "Debug"
-						#save image
-						img = Image.fromarray(newImageArray)
-						img.save(path+"\\Potential Objective.png", "PNG")
-					return
-			dimensions["startX"] = 787
-			dimensions["endX"] = 1135
-			dimensions["startY"] = 118
-			dimensions["endY"] = 128
-
-			if (mapType == "transition"):
-				dimensions["startX"] = 824
-				dimensions["endX"] = 1172
-			
-			# dorodo point 1: 32%
-			# dorodo point 2: 68%
-			# route66 point 1: 34%
-			# route66 point 2: 70%
-			# watchpoint point 1: 33%
-			# watchpoint point 2: 66%
-			# eichenwalde point 1: 66%
-			# eichenwalde point 1: 74% (Free move after door)
-			# hollywood point 1: 61%
-			# king's row point 1: 62%
-			# numbani point 1: 58%
-			
-			newImageArray = self.cutImage(imgArray, dimensions)
-			endFound = False
-			for X in range(0, (dimensions["endX"]-dimensions["startX"])):
-				
-				pixelToCheck = newImageArray[5][X]
-				pixelTeam = self.teamFromPixel(pixelToCheck)
-				if (pixelTeam != self.currentMapSide):
-					percentComplete = round((X)/(dimensions["endX"]-dimensions["startX"]) * 100)
-					print("Percent Complete: " + str(percentComplete))
-					endFound = True
-					break
-			
-			if endFound == False:
-				percentComplete = 100
-				print("Percent Complete: 100 - Complete Color Change")
-			
-			escortProgressLength = len(self.objectiveProgress["escortProgress"])
-			if (percentComplete > 0 or escortProgressLength > 0):
-				self.objectiveProgress["escortProgress"].append(percentComplete)
-			
-			#check to see if we can confirm the match has started, unlocking the Escort Objective
-			if escortProgressLength > 2:
-				minimum = 101
-				maximum = -1
-				for thisEscortProgress in self.objectiveProgress["escortProgress"][-3:]: #last 3
-					if thisEscortProgress > maximum:
-						maximum = thisEscortProgress
-					if thisEscortProgress < minimum: 
-						minimum = thisEscortProgress
-				if minimum != 0 and (maximum-minimum) < 5:
-					self.objectiveProgress["unlocked"] = True
-			
-			if percentComplete == 0:
-				self.identifyGameEnd(imgArray, mode)
+			newImageArray = self.identifyEscortObjectiveProgress(imgArray, mapType, mode)
 
 		if (mode == "for_reference"):
 			path = "Debug"
 			#save image
 			img = Image.fromarray(newImageArray)
 			img.save(path+"\\Potential Objective.png", "PNG")
+	
+	def identifyAssaultObjectiveProgress(self, imgArray, mapType, mode="standard"):
+		dimensions = {}
+		
+		#Assault Point 1
+		dimensions["startX"] = 918
+		dimensions["endX"] = 930
+		dimensions["startY"] = 114
+		dimensions["endY"] = 128
+		#color for side
+		pixelToCheck = imgArray[108][927]
+		
+		newImageArray = self.cutAndThreshold(imgArray, dimensions)
+		potential = self.whatImageIsThis(newImageArray, self.assaultReference)
+		thisStatus = max(potential.keys(), key=(lambda k: potential[k]))
+		
+		if (potential[thisStatus] > self.imageThreshold["Assault"]):  #max 166?
+			#get current progress
+			if (thisStatus == "Done"):
+				if (mapType == "transition"):
+					self.objectiveProgress["currentType"] = "escort"
+				else:
+					#Assault Point 2
+					dimensions["startX"] = 994
+					dimensions["endX"] = 1006
+					dimensions["startY"] = 114
+					dimensions["endY"] = 128
+					pixelToCheck = imgArray[108][997]
+					newImageArray = self.cutAndThreshold(imgArray, dimensions)
+					potential = self.whatImageIsThis(newImageArray, self.assaultReference)
+					thisStatus = max(potential.keys(), key=(lambda k: potential[k]))
+					self.identifyAssaultPointProgress(imgArray, 1, mode)
+			elif (thisStatus != "Locked"):
+				self.identifyAssaultPointProgress(imgArray, 0, mode)
+		elif (mapType == "transition"):
+			dimensions["startX"] = 760
+			dimensions["endX"] = 772
+			dimensions["startY"] = 114
+			dimensions["endY"] = 128
+			newImageArray = self.cutAndThreshold(imgArray, dimensions)
+			potential = self.whatImageIsThis(newImageArray, self.assaultReference)
+			thisStatus = max(potential.keys(), key=(lambda k: potential[k]))
+			if (potential[thisStatus] > self.imageThreshold["Assault"] and (thisStatus == "Locked" or thisStatus == "Done")):
+				print("Transition to Escort")
+				self.objectiveProgress["currentType"] = "escort"
+			else:
+				self.identifyGameEnd(imgArray, mode)
+		else:
+			self.identifyGameEnd(imgArray, mode)
+			
+		print(thisStatus)
+		print(potential)
+		if (thisStatus != "Locked"):
+			thisSide = self.teamFromPixel(pixelToCheck)
+			print(thisSide)
+		return newImageArray
+	
+	def identifyAssaultPointProgress(self, imgArray, pointNumber, mode="standard"):
+		assaultPercentComplete = 0
+		for pixelCoordinates in self.assaultPixelsToCheck[pointNumber]:
+			thisPixel = imgArray[pixelCoordinates[1]][pixelCoordinates[0]]
+			avgColorBrightness = reduce(lambda x, y: int(x) + int(y), thisPixel[:3])/3
+			if avgColorBrightness > 248:
+				assaultPercentComplete = assaultPercentComplete + 1
+			else:
+				#print(pixelCoordinates)
+				#print(thisPixel)
+			
+		print(assaultPercentComplete)
+	
+	def identifyControlObjectiveProgress(self, imgArray, mode="standard"):
+		dimensions = {}
+		
+		dimensions["startX"] = 952
+		dimensions["endX"] = 968
+		dimensions["startY"] = 78
+		dimensions["endY"] = 102
+		pixelToCheck = {}
+		pixelToCheck["current"] = imgArray[108][959]
+		pixelToCheck["left"] = {}
+		#pixelToCheck["left"][0] = imgArray[91][734] #what is this?
+		pixelToCheck["left"][0] = imgArray[91][774]
+		pixelToCheck["left"][1] = imgArray[91][814]
+		pixelToCheck["right"] = {}
+		pixelToCheck["right"][0] = imgArray[91][1146]
+		pixelToCheck["right"][1] = imgArray[91][1106]#far right
+		#pixelToCheck["right"][2] = imgArray[91][1186] # what is this?
+		
+		newImageArray = self.cutAndThreshold(imgArray, dimensions)
+		potential = self.whatImageIsThis(newImageArray, self.controlReference)
+		thisStatus = max(potential.keys(), key=(lambda k: potential[k]))
+		
+		#max 384, lower limit: 250
+		if (potential[thisStatus] > self.imageThreshold["Control"]):
+			print(thisStatus)
+			print(potential)
+			if (thisStatus != "Locked"):
+				thisSide = self.teamFromPixel(pixelToCheck["current"])
+				print("Current Controller: " + thisSide)
+			for pixelIndex, thisPixel in pixelToCheck["left"].items():
+				teamResult = self.teamFromPixel(thisPixel)
+				if teamResult == "neither":
+					print("Our Team Progress: " + str(pixelIndex))
+					break
+			for pixelIndex, thisPixel in pixelToCheck["right"].items():
+				teamResult = self.teamFromPixel(thisPixel)
+				if teamResult == "neither":
+					print("Their Team Progress: " + str(pixelIndex))
+					break
+		else:
+			self.identifyGameEnd(imgArray, mode)
+		
+		return newImageArray
+	
+	def identifyEscortObjectiveProgress(self, imgArray, mapType, mode="standard"):
+		dimensions = {}
+		
+		if ("escortProgress" not in self.objectiveProgress):
+			self.objectiveProgress["escortProgress"] = []
+	
+		if (mapType == "escort" and self.objectiveProgress["unlocked"] == False):
+			#check for lock symbol
+			dimensions["startX"] = 953
+			dimensions["endX"] = 965
+			dimensions["startY"] = 111
+			dimensions["endY"] = 125
+			
+			newImageArray = self.cutAndThreshold(imgArray, dimensions)
+			lockReference = {}
+			lockReference["Locked"] = self.assaultReference["Locked"]
+			potential = self.whatImageIsThis(newImageArray, lockReference)
+			
+			if (potential["Locked"] > self.imageThreshold["Assault"]):  #max 166?
+				print("Locked")
+				print(potential)
+				if (mode == "for_reference"):
+					path = "Debug"
+					#save image
+					img = Image.fromarray(newImageArray)
+					img.save(path+"\\Potential Objective.png", "PNG")
+				return
+		dimensions["startX"] = 787
+		dimensions["endX"] = 1135
+		dimensions["startY"] = 118
+		dimensions["endY"] = 128
+
+		if (mapType == "transition"):
+			dimensions["startX"] = 824
+			dimensions["endX"] = 1172
+		
+		# dorodo point 1: 32%
+		# dorodo point 2: 68%
+		# route66 point 1: 34%
+		# route66 point 2: 70%
+		# watchpoint point 1: 33%
+		# watchpoint point 2: 66%
+		# eichenwalde point 1: 66%
+		# eichenwalde point 1: 74% (Free move after door)
+		# hollywood point 1: 61%
+		# king's row point 1: 62%
+		# numbani point 1: 58%
+		
+		newImageArray = self.cutImage(imgArray, dimensions)
+		endFound = False
+		for X in range(0, (dimensions["endX"]-dimensions["startX"])):
+			
+			pixelToCheck = newImageArray[5][X]
+			pixelTeam = self.teamFromPixel(pixelToCheck)
+			if (pixelTeam != self.currentMapSide):
+				percentComplete = round((X)/(dimensions["endX"]-dimensions["startX"]) * 100)
+				print("Percent Complete: " + str(percentComplete))
+				endFound = True
+				break
+		
+		if endFound == False:
+			percentComplete = 100
+			print("Percent Complete: 100 - Complete Color Change")
+		
+		escortProgressLength = len(self.objectiveProgress["escortProgress"])
+		if (percentComplete > 0 or escortProgressLength > 0):
+			self.objectiveProgress["escortProgress"].append(percentComplete)
+		
+		#check to see if we can confirm the match has started, unlocking the Escort Objective
+		if escortProgressLength > 2:
+			minimum = 101
+			maximum = -1
+			for thisEscortProgress in self.objectiveProgress["escortProgress"][-3:]: #last 3
+				if thisEscortProgress > maximum:
+					maximum = thisEscortProgress
+				if thisEscortProgress < minimum: 
+					minimum = thisEscortProgress
+			if minimum != 0 and (maximum-minimum) < 5:
+				self.objectiveProgress["unlocked"] = True
+		
+		if percentComplete == 0:
+			self.identifyGameEnd(imgArray, mode)
 	
 	def identifyGameEnd(self, imgArray, mode="standard"):
 		dimensions = {}

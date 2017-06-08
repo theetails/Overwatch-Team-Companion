@@ -90,7 +90,7 @@ class AppController(ApplicationSession):
 	def createImagesForMapReferenceObjective(self):
 		thisGameObject = Game(self.debugMode)
 		screenImgArray = thisGameObject.getScreen()
-		thisGameObject.map.currentMap[0]="oasis"
+		thisGameObject.map.currentMap[0]="hanamura"
 		thisGameObject.map.identifyObjectiveProgress(screenImgArray, "for_reference")
 
 	def createMapReferences(self):
