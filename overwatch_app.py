@@ -164,7 +164,6 @@ laravel
 	Login System
 overwatch_app.py	
 	Identify Objective Progress
-		Initial Lock on Escort
 		Keep track of progress
 		Add Capture the Flag
 	Keep track of Game Time

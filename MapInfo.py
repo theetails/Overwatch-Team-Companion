@@ -200,6 +200,8 @@ class MapInfo(GameObject):
 			placeholder = True
 		
 		if (mapType == "assault" or self.objectiveProgress["currentType"] == "assault"):
+
+			
 			#Assault Point 1
 			dimensions["startX"] = 918
 			dimensions["endX"] = 930
@@ -291,6 +293,10 @@ class MapInfo(GameObject):
 			else:
 				self.identifyGameEnd(imgArray, mode)
 		if (mapType == "escort" or self.objectiveProgress["currentType"] == "escort"):
+			if ("escortProgress" not in self.objectiveProgress):
+				self.objectiveProgress["escortProgress"] = []
+		
+		
 			if (mapType == "escort" and self.objectiveProgress["unlocked"] == False):
 				#check for lock symbol
 				dimensions["startX"] = 953
@@ -348,6 +354,22 @@ class MapInfo(GameObject):
 			if endFound == False:
 				percentComplete = 100
 				print("Percent Complete: 100 - Complete Color Change")
+			
+			escortProgressLength = len(self.objectiveProgress["escortProgress"])
+			if (percentComplete > 0 or escortProgressLength > 0):
+				self.objectiveProgress["escortProgress"].append(percentComplete)
+			
+			#check to see if we can confirm the match has started, unlocking the Escort Objective
+			if escortProgressLength > 2:
+				minimum = 101
+				maximum = -1
+				for thisEscortProgress in self.objectiveProgress["escortProgress"][-3:]: #last 3
+					if thisEscortProgress > maximum:
+						maximum = thisEscortProgress
+					if thisEscortProgress < minimum: 
+						minimum = thisEscortProgress
+				if minimum != 0 and (maximum-minimum) < 5:
+					self.objectiveProgress["unlocked"] = True
 			
 			if percentComplete == 0:
 				self.identifyGameEnd(imgArray, mode)
