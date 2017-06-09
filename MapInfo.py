@@ -250,6 +250,9 @@ class MapInfo(GameObject):
 		thisStatus = max(potential.keys(), key=(lambda k: potential[k]))
 		
 		if (potential[thisStatus] > self.imageThreshold["Assault"]):  #max 166?
+			thisStatusSplit = thisStatus.split("-")
+			thisStatus = thisStatusSplit[0]
+			
 			#get current progress
 			if (thisStatus == "Done"):
 				if (mapType == "transition"):
@@ -264,6 +267,8 @@ class MapInfo(GameObject):
 					newImageArray = self.cutAndThreshold(imgArray, dimensions)
 					potential = self.whatImageIsThis(newImageArray, self.assaultReference)
 					thisStatus = max(potential.keys(), key=(lambda k: potential[k]))
+					thisStatusSplit = thisStatus.split("-")
+					thisStatus = thisStatusSplit[0]
 					self.identifyAssaultPointProgress(imgArray, 1, mode)
 			elif (thisStatus != "Locked"):
 				self.identifyAssaultPointProgress(imgArray, 0, mode)
@@ -275,7 +280,8 @@ class MapInfo(GameObject):
 			newImageArray = self.cutAndThreshold(imgArray, dimensions)
 			potential = self.whatImageIsThis(newImageArray, self.assaultReference)
 			thisStatus = max(potential.keys(), key=(lambda k: potential[k]))
-			if (potential[thisStatus] > self.imageThreshold["Assault"] and (thisStatus == "Locked" or thisStatus == "Done")):
+			thisStatusSplit = thisStatus.split("-")
+			if (potential[thisStatus] > self.imageThreshold["Assault"] and (thisStatus == "Locked" or thisStatusSplit[0] == "Done")):
 				print("Transition to Escort")
 				self.objectiveProgress["currentType"] = "escort"
 			else:
@@ -297,10 +303,10 @@ class MapInfo(GameObject):
 			avgColorBrightness = reduce(lambda x, y: int(x) + int(y), thisPixel[:3])/3
 			if avgColorBrightness > 248:
 				assaultPercentComplete = assaultPercentComplete + 1
-			else:
+			#else:
 				#print(pixelCoordinates)
 				#print(thisPixel)
-			
+				
 		print(assaultPercentComplete)
 	
 	def identifyControlObjectiveProgress(self, imgArray, mode="standard"):
@@ -324,7 +330,7 @@ class MapInfo(GameObject):
 		newImageArray = self.cutAndThreshold(imgArray, dimensions)
 		potential = self.whatImageIsThis(newImageArray, self.controlReference)
 		thisStatus = max(potential.keys(), key=(lambda k: potential[k]))
-		
+
 		#max 384, lower limit: 250
 		if (potential[thisStatus] > self.imageThreshold["Control"]):
 			print(thisStatus)
