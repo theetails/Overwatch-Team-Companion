@@ -5,6 +5,7 @@ import subprocess as sp
 
 from AllHeroes import AllHeroes
 from MapInfo import MapInfo
+from TimeInfo import TimeInfo
 
 class Game:
 
@@ -12,6 +13,7 @@ class Game:
 		self.debugMode = debugMode
 		self.heroes = AllHeroes(debugMode)
 		self.map = MapInfo(debugMode)
+		self.gameTime = TimeInfo(debugMode)
 	
 	def main(self, broadcaster):
 		
@@ -25,6 +27,7 @@ class Game:
 			if (currentView == "Tab"):
 				sleepTime = 0.5
 				self.map.identifyObjectiveProgress(screenImgArray)
+				self.gameTime.main(screenImgArray)
 			elif (currentView == "Hero Select"):
 				sleepTime = 1
 			self.heroes.main(screenImgArray, currentTime, currentView)

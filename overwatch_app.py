@@ -132,25 +132,33 @@ def mainFunction():
 	sp.call('cls',shell=True)
 	runner = ApplicationRunner(url="ws://voxter.mooo.com:8080/ws", realm="com.voxter.teambuilder")
 	runner.run(AppController)
-	
-#createImagesForHeroReference()
-#createHeroReferences()
-#createImagesForMapReference()
-#createMapReferences()
-#unitTestReferences()
-mainFunction()
-#AppUI()
-'''
-dual assault points:
-17 x 17
-1st: 
-	x: 919
-	y: 110
-2nd:
-	x: 989
-	y: 108
 
-'''
+def createDigitImage():
+	sp.call('cls',shell=True)
+	thisGameObject = Game(False)
+	screenImgArray = thisGameObject.getScreen()
+	thisGameObject.gameTime.main(screenImgArray)
+	
+def createDigitReferences():
+	thisGameObject = Game(False)
+	
+	referenceString = ['Reference\\DigitImageList.txt', 'Reference\\ColonImageList.txt']
+	path = ["Reference\\Digit Sources", "Reference\\Digit Colon Source"]
+	for x in range(0,2):
+		referenceImagesFile = open(referenceString[x],'w')
+		referenceImages = [image for image in listdir(path[x])]
+		for file in referenceImages:
+			imagePath = path[x]+"/"+file
+			sourceImage = Image.open(imagePath)
+			sourceImageArray = np.array(sourceImage)
+			thresholdImageArray = thisGameObject.map.threshold(sourceImageArray)
+			sourceImageList = str(sourceImageArray.tolist())
+			lineToWrite = file[:-4]+'::'+sourceImageList+'\n'
+			referenceImagesFile.write(lineToWrite)
+	
+mainFunction()
+#createDigitImage()
+#createDigitReferences()
 '''
 To Do:
 teams.js
@@ -172,8 +180,6 @@ overwatch_app.py
 	Detect Screen Color Differences
 	Streaming Integration
 	GUI
-	
-
 '''
 
 
