@@ -165,8 +165,8 @@ class MapInfo(GameObject):
 		elif (mode == "Tab"):
 			startX = 105
 			endX = 240
-			startY = 50
-			endY = 63
+			startY = 49
+			endY = 62
 		mapImage = imgArray[startY:endY, startX:endX]
 		mapImageArray = np.asarray(mapImage)
 		if (mode == "Hero Select"):

@@ -151,7 +151,7 @@ def createDigitReferences():
 			imagePath = path[x]+"/"+file
 			sourceImage = Image.open(imagePath)
 			sourceImageArray = np.array(sourceImage)
-			thresholdImageArray = thisGameObject.map.threshold(sourceImageArray)
+			thresholdImageArray = thisGameObject.gameTime.threshold(sourceImageArray)
 			sourceImageList = str(sourceImageArray.tolist())
 			lineToWrite = file[:-4]+'::'+sourceImageList+'\n'
 			referenceImagesFile.write(lineToWrite)

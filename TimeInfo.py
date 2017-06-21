@@ -27,8 +27,8 @@ class TimeInfo(GameObject):
 		digitDimensions = {}
 		digitDimensions["startX"] = 154
 		digitDimensions["endX"] = 162
-		digitDimensions["startY"] = 74
-		digitDimensions["endY"] = 86
+		digitDimensions["startY"] = 73
+		digitDimensions["endY"] = 85
 		
 		self.digitDimensions = digitDimensions
 		#1 pixels between; colon is 3 wide
@@ -46,12 +46,13 @@ class TimeInfo(GameObject):
 		digitsAfterColon = 0
 		
 		digitRequirement = 79 #Don't need? If its not a colon, it must be a digit
-		colonRequirement = 33
+		colonRequirement = 30
 		
 		dimensions = self.digitDimensions.copy()
 		loopCount = 0
 		timeString = ""
 		while True:
+			#print("Loop Count: " + str(loopCount))
 			if digitsBeforeColon > 0 and colonFound == False:
 				colonDimensions = dimensions.copy()
 				colonDimensions["endX"] = colonDimensions["endX"] - 5
@@ -68,6 +69,7 @@ class TimeInfo(GameObject):
 					self.saveDebugData(thisDigitArray, loopCount)
 					loopCount = loopCount + 1
 					continue
+				#print("Not Colon")
 			thisDigitArray = self.cutAndThreshold(imgArray, dimensions)
 			potential = self.whatImageIsThis(thisDigitArray, self.digitReferences)
 			thisDigitFull = max(potential.keys(), key=(lambda k: potential[k]))
@@ -96,7 +98,10 @@ class TimeInfo(GameObject):
 				break
 			dimensions["startX"] = dimensions["startX"] + 9
 			dimensions["endX"] = dimensions["endX"] + 9
-			loopCount = loopCount + 1
+			if loopCount > 4:
+				break
+			else:
+				loopCount = loopCount + 1
 		
 		thisTime = datetime.strptime(timeString, "%M:%S")
 		thisTimeSeconds = int(timeStringSplit[1])
