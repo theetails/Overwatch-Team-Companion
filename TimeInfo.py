@@ -66,7 +66,8 @@ class TimeInfo(GameObject):
 					colonFound = True
 					dimensions["startX"] = dimensions["startX"] + 4
 					dimensions["endX"] = dimensions["endX"] + 4
-					self.saveDebugData(thisDigitArray, loopCount)
+					if(self.debugMode):
+						self.saveDebugData(thisDigitArray, loopCount)
 					loopCount = loopCount + 1
 					continue
 				#print("Not Colon")
@@ -92,8 +93,8 @@ class TimeInfo(GameObject):
 				digitsAfterColon = digitsAfterColon + 1
 			else: 
 				digitsBeforeColon = digitsBeforeColon + 1
-			
-			self.saveDebugData(thisDigitArray, loopCount)
+			if(self.debugMode):
+				self.saveDebugData(thisDigitArray, loopCount)
 			if digitsAfterColon == 2:
 				break
 			dimensions["startX"] = dimensions["startX"] + 9
