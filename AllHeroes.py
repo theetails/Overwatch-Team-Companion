@@ -1,125 +1,126 @@
 import numpy as np
-import subprocess as sp
 from PIL import Image
 
 from GameObject import GameObject
 from Hero import Hero
 
-class AllHeroes(GameObject):
-	
-	correctHeroThreshold = 2850
-	heroesDictionary = {}
-	heroesList = []
-	
-	def __init__(self, debugMode):
-		self.debugMode = debugMode
-		self.characterReferences = self.readReferences("Reference\\HeroImageList.txt")
-		for x in range(1,13):
-			self.heroesDictionary[x] = Hero(x)
-	
-	def main(self, screenImageArray, currentTime, currentView):
-		if (currentView == "Hero Select"):
-			heroRange = range(1,7)
-		elif (currentView == "Tab"):
-			heroRange = range(1,13)
 
-		failedHeroes = []
-		for heroNumber in heroRange:
-			thisHero = self.heroesDictionary[heroNumber]
-			result = self.identifyHero(screenImageArray, thisHero, currentView)
-			if (result == False):
-				failedHeroes.append(heroNumber)
-				print(str(heroNumber) + " Failed")
-			else:
-				print(thisHero.currentHero)
-		
-		if ((len(failedHeroes) > 0) and self.debugMode):
-			failedHeroes.append(1)
-			for heroNumber in failedHeroes:
-				self.heroesDictionary[heroNumber].saveDebugData(currentTime)
-				self.heroesDictionary[heroNumber].revertPreviousHero()
-			screenshot = Image.fromarray(screenImageArray)
-			screenshot.save("Debug\\Potential " + currentTime + " fullscreen" + ".png", "PNG")
-		
-		# check for entire enemy team -> unknowns
-		if (currentView == "Tab"):
-			allUnknown = True
-			for heroNumber, enemyHero in self.heroesDictionary.items():
-				if (heroNumber in range(7,13)):
-					if(enemyHero.currentHero != "unknown"):
-						allUnknown = False
-			del enemyHero
-			if (allUnknown == True):
-				for heroNumber, enemyHero in self.heroesDictionary.items():
-					if (heroNumber in range(7,13)):
-						enemyHero.revertPreviousHero()
-		return currentView
-	
-	def heroesToList(self):
-		currentHeroesList = [[],[]]
-		
-		for heroNumber, hero in self.heroesDictionary.items():
-			if (heroNumber > 6):
-				thisRow = 1
-			else :
-				thisRow = 0
-			currentHeroesList[thisRow].append(hero.getHeroNumber())
-		if (currentHeroesList != self.heroesList):
-			self.heroesList = currentHeroesList
-			return True
-		else:
-			return False
-	
-	def identifyHero(self, screenImgArray, thisHero, view):
-		heroIdentities = {}
-		if (view == "Tab"):
-			heroCoordinates = thisHero.screenPositionTab
-		else:
-			heroCoordinates = thisHero.screenPositionCharacterSelect
-		
-		thisHeroImg = screenImgArray[ heroCoordinates["startY"] : heroCoordinates["endY"], heroCoordinates["startX"] : heroCoordinates["endX"]] #crop to Hero
-		thisHeroImgThreshold = self.threshold(np.asarray(thisHeroImg)) #Make Black & White based off average value
-		thisHero.setImageArray(thisHeroImg) #save IMG to Hero
-		potential = self.whatImageIsThis(thisHeroImgThreshold, self.characterReferences) #compare to References
-		thisHero.setPotential(potential)
-		identifiedHero = max(potential.keys(), key=(lambda k: potential[k]))
-		if (potential[identifiedHero] > self.correctHeroThreshold): #if enough pixels are the same
-			thisHeroSplit = identifiedHero.split("-")
-			thisHero.setHero(thisHeroSplit[0])
-			if(thisHero.slotNumber==1 and thisHeroSplit[0] == "searching"): #The player cannot be "searching", reduces errors
-				return False
-			else: 
-				return True
-		else:
-			return False
-	
-	def checkForChange(self):
-		heroesListChange = self.heroesToList()  # Save heroes to heroesDictionary
-		return heroesListChange
-		
-	def broadcastHeroes(self, broadcaster):
-		publishList = ["heroes",self.heroesList]
-		if (broadcaster != "debug"):
-			broadcaster.publish(broadcaster.subscriptionString, publishList)
-		
-	
-	def clearEnemyHeroes(self, broadcaster):
-		for heroNumber, hero in self.heroesDictionary.items():
-			if (heroNumber in range(7,13)):
-				hero.clearHero()
-		self.heroesToList()
-		if (broadcaster != "debug"):
-			self.broadcastHeroes(broadcaster)
-		
-	def changeHeroes(self, incomingHeroes):
-		incomingHerosDictionary = {}
-		count = 1
-		for row in incomingHeroes:
-			for heroNumber in row:
-				incomingHerosDictionary[count]=heroNumber
-				count = count + 1
-		for heroNumber, hero in self.heroesDictionary.items():
-			thisHeroName = hero.getHeroNameFromNumber(incomingHerosDictionary[heroNumber])
-			hero.setHero(thisHeroName)
-		self.heroesToList()
-		
+class AllHeroes(GameObject):
+    correctHeroThreshold = 2850
+    heroesDictionary = {}
+    heroesList = []
+
+    def __init__(self, debug_mode):
+        self.debugMode = debug_mode
+        self.characterReferences = self.read_references("Reference\\HeroImageList.txt")
+        for x in range(1, 13):
+            self.heroesDictionary[x] = Hero(x)
+
+    def main(self, screen_image_array, current_time, current_view):
+        hero_range = []
+        if current_view == "Hero Select":
+            hero_range = range(1, 7)
+        elif current_view == "Tab":
+            hero_range = range(1, 13)
+
+        failed_heroes = []
+        for hero_number in hero_range:
+            this_hero = self.heroesDictionary[hero_number]
+            result = self.identify_hero(screen_image_array, this_hero, current_view)
+            if not result:
+                failed_heroes.append(hero_number)
+                print(str(hero_number) + " Failed")
+            else:
+                print(this_hero.currentHero)
+
+        if (len(failed_heroes) > 0) and self.debugMode:
+            failed_heroes.append(1)
+            for hero_number in failed_heroes:
+                self.heroesDictionary[hero_number].save_debug_data(current_time)
+                self.heroesDictionary[hero_number].revert_previous_hero()
+            screen_shot = Image.fromarray(screen_image_array)
+            screen_shot.save("Debug\\Potential " + current_time + " fullscreen" + ".png", "PNG")
+
+        # check for entire enemy team -> unknowns
+        if current_view == "Tab":
+            all_unknown = True
+            for hero_number, enemy_hero in self.heroesDictionary.items():
+                if hero_number in range(7, 13):
+                    if enemy_hero.currentHero != "unknown":
+                        all_unknown = False
+            if all_unknown:
+                for hero_number, enemy_hero in self.heroesDictionary.items():
+                    if hero_number in range(7, 13):
+                        enemy_hero.revert_previous_hero()
+        return current_view
+
+    def heroes_to_list(self):
+        current_heroes_list = [[], []]
+
+        for heroNumber, hero in self.heroesDictionary.items():
+            if heroNumber > 6:
+                this_row = 1
+            else:
+                this_row = 0
+            current_heroes_list[this_row].append(hero.get_hero_number())
+        if current_heroes_list != self.heroesList:
+            self.heroesList = current_heroes_list
+            return True
+        else:
+            return False
+
+    def identify_hero(self, screen_img_array, this_hero, view):
+        if view == "Tab":
+            hero_coordinates = this_hero.screenPositionTab
+        else:
+            hero_coordinates = this_hero.screenPositionCharacterSelect
+
+        this_hero_img = screen_img_array[
+                        hero_coordinates["start_y"]: hero_coordinates["end_y"],
+                        hero_coordinates["start_x"]: hero_coordinates["end_x"]
+                        ]  # crop to Hero
+        # Make Black & White based off average value
+        this_hero_img_threshold = self.threshold(np.asarray(this_hero_img))
+        this_hero.set_image_array(this_hero_img)  # save IMG to Hero
+        potential = self.what_image_is_this(this_hero_img_threshold, self.characterReferences)  # compare to References
+        this_hero.set_potential(potential)
+        identified_hero = max(potential.keys(), key=(lambda k: potential[k]))
+        if potential[identified_hero] > self.correctHeroThreshold:  # if enough pixels are the same
+            this_hero_split = identified_hero.split("-")
+            this_hero.set_hero(this_hero_split[0])
+            if this_hero.slotNumber == 1 and this_hero_split[0] == "searching":
+                # The player cannot be "searching", reduces errors
+                return False
+            else:
+                return True
+        else:
+            return False
+
+    def check_for_change(self):
+        heroes_list_change = self.heroes_to_list()  # Save heroes to heroesDictionary
+        return heroes_list_change
+
+    def broadcast_heroes(self, broadcaster):
+        publish_list = ["heroes", self.heroesList]
+        if broadcaster != "debug":
+            broadcaster.publish(broadcaster.subscriptionString, publish_list)
+
+    def clear_enemy_heroes(self, broadcaster):
+        for heroNumber, hero in self.heroesDictionary.items():
+            if heroNumber in range(7, 13):
+                hero.clear_hero()
+        self.heroes_to_list()
+        if broadcaster != "debug":
+            self.broadcast_heroes(broadcaster)
+
+    def change_heroes(self, incoming_heroes):
+        incoming_heroes_dictionary = {}
+        count = 1
+        for row in incoming_heroes:
+            for heroNumber in row:
+                incoming_heroes_dictionary[count] = heroNumber
+                count = count + 1
+        for heroNumber, hero in self.heroesDictionary.items():
+            this_hero_name = hero.get_hero_name_from_number(incoming_heroes_dictionary[heroNumber])
+            hero.set_hero(this_hero_name)
+        self.heroes_to_list()

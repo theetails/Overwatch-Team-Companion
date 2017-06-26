@@ -7,63 +7,65 @@ from AllHeroes import AllHeroes
 from MapInfo import MapInfo
 from TimeInfo import TimeInfo
 
-class Game:
 
-	def __init__(self, debugMode):
-		self.debugMode = debugMode
-		self.heroes = AllHeroes(debugMode)
-		self.map = MapInfo(debugMode)
-		self.gameTime = TimeInfo(debugMode)
-	
-	def main(self, broadcaster):
-		
-		screenImgArray = self.getScreen()
-		currentTime = str(int(time.time()))
-		currentView = self.map.main(screenImgArray)
-		if (currentView):
-			sp.call('cls',shell=True)
-			print(self.map.currentMap[0])
-			print(currentView)
-			if (currentView == "Tab"):
-				sleepTime = 0.5
-				self.map.identifyObjectiveProgress(screenImgArray)
-				self.gameTime.main(screenImgArray)
-			elif (currentView == "Hero Select"):
-				sleepTime = 1
-			self.heroes.main(screenImgArray, currentTime, currentView)
-			
-			mapChanged = self.map.mapChange
-			if (currentView == "Hero Select"):
-				sideChanged = self.map.identifySide(screenImgArray)
-			else:
-				sideChanged = False
-			if ((self.map.thisMapPotential < self.map.imageThreshold[currentView]) and self.debugMode):
-				self.map.saveDebugData(currentTime)
-			if (mapChanged or sideChanged):
-				self.map.broadcastOptions(broadcaster)
-				self.map.resetObjectiveProgress()
-			if (mapChanged and currentView == "Hero Select"):
-				print("ClearEnemyHeroes")
-				self.heroes.clearEnemyHeroes(broadcaster)
-			elif(sideChanged):
-				heroesChanged = self.heroes.checkForChange()
-				if (heroesChanged):
-					self.heroes.broadcastHeroes(broadcaster)
-			else: 
-				heroesChanged = self.heroes.checkForChange()
-				if (heroesChanged):
-					self.heroes.broadcastHeroes(broadcaster)
-		else:
-			sleepTime = 0.5
-			heroesChanged = self.heroes.checkForChange()
-			if (heroesChanged):
-				self.heroes.broadcastHeroes(broadcaster)
-				
-			# Check for Objective Progress Here
-			self.map.identifyObjectiveProgress(screenImgArray)
-			
-		return sleepTime
-		
-	def getScreen(self):
-		screenImg = ImageGrab.grab(bbox=None)
-		return np.asarray(screenImg)
+class Game:
+    def __init__(self, debug_mode):
+        self.debugMode = debug_mode
+        self.heroes = AllHeroes(debug_mode)
+        self.map = MapInfo(debug_mode)
+        self.gameTime = TimeInfo(debug_mode)
+
+    def main(self, broadcaster):
+        sleep_time = None
+
+        screen_img_array = self.get_screen()
+        current_time = str(int(time.time()))
+        current_view = self.map.main(screen_img_array)
+        if current_view:
+            sp.call('cls', shell=True)
+            print(self.map.currentMap[0])
+            print(current_view)
+            if current_view == "Tab":
+                sleep_time = 0.5
+                self.map.identify_objective_progress(screen_img_array)
+                self.gameTime.main(screen_img_array)
+            elif current_view == "Hero Select":
+                sleep_time = 1
+            self.heroes.main(screen_img_array, current_time, current_view)
+
+            map_changed = self.map.mapChange
+            if current_view == "Hero Select":
+                side_changed = self.map.identify_side(screen_img_array)
+            else:
+                side_changed = False
+            if (self.map.thisMapPotential < self.map.imageThreshold[current_view]) and self.debugMode:
+                self.map.save_debug_data(current_time)
+            if map_changed or side_changed:
+                self.map.broadcast_options(broadcaster)
+                self.map.reset_objective_progress()
+            if map_changed and current_view == "Hero Select":
+                print("ClearEnemyHeroes")
+                self.heroes.clear_enemy_heroes(broadcaster)
+            elif side_changed:
+                heroes_changed = self.heroes.check_for_change()
+                if heroes_changed:
+                    self.heroes.broadcast_heroes(broadcaster)
+            else:
+                heroes_changed = self.heroes.check_for_change()
+                if heroes_changed:
+                    self.heroes.broadcast_heroes(broadcaster)
+        else:
+            sleep_time = 0.5
+            heroes_changed = self.heroes.check_for_change()
+            if heroes_changed:
+                self.heroes.broadcast_heroes(broadcaster)
+
+            # Check for Objective Progress Here
+            self.map.identify_objective_progress(screen_img_array)
+
+        return sleep_time
+
+    @staticmethod
+    def get_screen():
+        screen_img = ImageGrab.grab(bbox=None)
+        return np.asarray(screen_img)
