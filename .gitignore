@@ -1,7 +1,6 @@
 #Overwatch App Specific
 Debug/
 
-
 # -- Python Section --
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -94,3 +93,6 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+#PyCharm
+.idea/**
