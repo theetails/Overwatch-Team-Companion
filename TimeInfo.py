@@ -92,16 +92,19 @@ class TimeInfo(GameObject):
                 break
             else:
                 loop_count = loop_count + 1
-
-        this_time = datetime.strptime(time_string, "%M:%S")
-        this_time_seconds = int(time_string_split[1])
-        this_time_minutes = int(time_string_split[0])
-        this_time_delta = timedelta(minutes=this_time_minutes, seconds=this_time_seconds)
-        print(datetime.strftime(this_time, "%M:%S"))
-        if self.mapStartTime is not None:  # and time > 0:00
-            self.mapStartTime = datetime.now() - this_time_delta
-            print(datetime.strftime(self.mapStartTime, "%H:%M:%S"))
-        self.elapsedTime = this_time
+        if time_string[1] == ":" or time_string[2] == ":":
+            this_time = datetime.strptime(time_string, "%M:%S")
+            this_time_seconds = int(time_string_split[1])
+            this_time_minutes = int(time_string_split[0])
+            this_time_delta = timedelta(minutes=this_time_minutes, seconds=this_time_seconds)
+            print(datetime.strftime(this_time, "%M:%S"))
+            if self.mapStartTime is not None:  # and time > 0:00
+                self.mapStartTime = datetime.now() - this_time_delta
+                print(datetime.strftime(self.mapStartTime, "%H:%M:%S"))
+            self.elapsedTime = this_time
+        else:
+            print("Time not reading correctly")
+            # TODO save time debug
 
     # check to see if the times line up??
     # does a replay show the current game time? probably
