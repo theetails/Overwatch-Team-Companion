@@ -56,18 +56,22 @@ class MapInfo(GameObject):
         self.reset_objective_progress()
         self.calculate_assault_progress_pixels()
 
-    def main(self, screen_image_array):
+    def main(self, screen_image_array, current_time):
         # check if Tab View
         map_result = self.identify_map(screen_image_array, "Tab")
         if map_result:
-            return "Tab"
+            this_view = "Tab"
         else:
             # check if Hero Select View
             map_result = self.identify_map(screen_image_array, "Hero Select")
             if map_result:
-                return "Hero Select"
+                this_view = "Hero Select"
             else:
                 return False
+
+        if (self.thisMapPotential < self.imageThreshold[this_view]) and self.debugMode:
+            self.save_debug_data(current_time)
+        return this_view
 
     def reset_objective_progress(self):
         self.objectiveProgress = {
@@ -253,7 +257,6 @@ class MapInfo(GameObject):
     def identify_objective_progress(self, img_array, mode="standard"):
         if self.current_map == [None] or self.objectiveProgress["gameOver"] is True:
             return False
-
         map_type = self.map_type()
         new_image_array = None
 
@@ -498,7 +501,7 @@ class MapInfo(GameObject):
         if percent_complete > 0 or escort_progress_length > 0:
             self.objectiveProgress["escortProgress"].append(percent_complete)
 
-        # check to see if we can confirm the match has started, unlocking the Escort Objective
+        # check to see if we can confirm the statistics has started, unlocking the Escort Objective
         if escort_progress_length > 2:
             minimum = 101
             maximum = -1
@@ -536,7 +539,7 @@ class MapInfo(GameObject):
             if potential["Victory"] > self.imageThreshold["Victory"]:
                 self.objectiveProgress["gameEnd"] = "Victory"
                 print("Victory!")
-                self.submit_stats_and_clear()
+                self.set_game_over()
         if self.objectiveProgress["gameEnd"] != "Victory":
             # -- Check for Defeat -- #
             red = [210, 120, 130]
@@ -550,7 +553,7 @@ class MapInfo(GameObject):
                 if potential["Defeat"] > self.imageThreshold["Defeat"]:  # max 7200
                     self.objectiveProgress["gameEnd"] = "Defeat"
                     print("Defeat! :(")
-                    self.submit_stats_and_clear()
+                    self.set_game_over()
         if (type(result) is not bool) and (mode == "for_reference"):
             path = "Debug"
             # save image
@@ -673,6 +676,16 @@ class MapInfo(GameObject):
         if broadcaster != "debug":
             broadcaster.publish(broadcaster.subscriptionString, options_to_send)
 
-    def submit_stats_and_clear(self):
+    def set_game_over(self):
         self.objectiveProgress["gameOver"] = True
         print("Submit Stats and Clear")
+
+    def get_current_map(self):
+        map_split = self.current_map.split("-")
+        map_name = ""
+        for string in map_split:
+            if string.isdigit():
+                break
+            else:
+                map_name = map_name + "-" + string
+        return map_name
