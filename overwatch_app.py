@@ -39,9 +39,12 @@ class AppController(ApplicationSession):
         def on_event(msg1, msg2=None):
             # debug output
             if msg2 is None:
-                print("Got event: Argument 1: {" + str(msg1) + "}")
+                print("Got event:")
+                print("Argument 1: {" + str(msg1) + "}")
             else:
-                print("Got event: Argument 1: {" + str(msg1) + "} Argument 2: {" + str(msg2) + "}")
+                print("Got event:")
+                print("Argument 1: {" + str(msg1) + "}")
+                print("Argument 2: {" + str(msg2) + "}")
 
             if msg1 == "Hello":
                 self.gameObject.heroes.broadcast_heroes(self)
@@ -88,30 +91,46 @@ class AppController(ApplicationSession):
     def create_images_for_map_reference_hero_select(self):
         this_game_object = Game(self.debugMode)
         screen_img_array = this_game_object.get_screen()
-        this_game_object.map.currentImageArray = this_game_object.map.get_map(screen_img_array, "Hero Select", False)
+        this_game_object.map.currentImageArray = this_game_object.map.get_map(
+            screen_img_array, "Hero Select", lijiang=False)  # , threshold_balance=True)
         this_game_object.map.save_debug_data("for_reference")
 
     def create_images_for_map_reference_tab(self):
         this_game_object = Game(self.debugMode)
         screen_img_array = this_game_object.get_screen()
-        this_game_object.map.currentImageArray = this_game_object.map.get_map(screen_img_array, "Tab", False)
+        this_game_object.map.currentImageArray = this_game_object.map.get_map(screen_img_array, "Tab", lijiang=False)
         this_game_object.map.save_debug_data("for_reference")
 
     def create_images_for_map_reference_objective(self):
+        this_map = "dorado"
+        this_side = "defense"
+
         this_game_object = Game(self.debugMode)
         screen_img_array = this_game_object.get_screen()
-        this_game_object.map.currentMap[0] = "hanamura"
+        this_game_object.map.current_map[0] = this_map
+        this_game_object.map.currentMapSide = this_side
         this_game_object.map.identify_objective_progress(screen_img_array, "for_reference")
 
     @staticmethod
     def create_map_references():
 
-        reference_string = ['Reference\\MapImageList.txt', 'Reference\\MapImageListLijiang.txt',
-                            'Reference\\MapImageListTab.txt', 'Reference\\ObjectiveListAssault.txt',
-                            'Reference\\ObjectiveListControl.txt', 'Reference\\GameEnd.txt']
-        path = ["Reference\\Map Name Image Sources", "Reference\\Lijiang Map Name Image Sources",
-                "Reference\\Map Name Tab Image Sources", "Reference\\Objective-Assault Sources",
-                "Reference\\Objective-Control Sources", "Reference\\Game End Sources"]
+        reference_string = [
+            'Reference\\MapImageList.txt',
+            'Reference\\MapImageHighThreshold.txt',
+            'Reference\\MapImageListLijiang.txt',
+            'Reference\\MapImageListTab.txt',
+            'Reference\\ObjectiveListAssault.txt',
+            'Reference\\ObjectiveListControl.txt',
+            'Reference\\GameEnd.txt'
+        ]
+        path = [
+            "Reference\\Map Name Image Sources",
+            "Reference\\Map Name Image Sources High Threshold",
+            "Reference\\Lijiang Map Name Image Sources",
+            "Reference\\Map Name Tab Image Sources",
+            "Reference\\Objective-Assault Sources",
+            "Reference\\Objective-Control Sources",
+            "Reference\\Game End Sources"]
         for x in range(0, 6):
             reference_images_file = open(reference_string[x], 'w')
             reference_images = [image for image in listdir(path[x])]
@@ -124,23 +143,23 @@ class AppController(ApplicationSession):
                 line_to_write = file[:-4] + '::' + source_image_list + '\n'
                 reference_images_file.write(line_to_write)
 
-    # @staticmethod
-    # def unit_test_references():  # needs reworked
-    #     # reference_image_list, temp1, temp2 = openReferences()  # need to add maps
-    #
-    #     path = "Reference\\Image Sources"
-    #     reference_images = [image for image in listdir(path)]
-    #     for file in reference_images:
-    #         image_path = path + "/" + file
-    #         source_image = Image.open(image_path)
-    #         source_image_array = np.array(source_image)
-    #         threshold_image_array = threshold(source_image_array)
-    #         potential = whatCharacterIsThis(threshold_image_array, reference_image_list)
-    #         character = max(potential.keys(), key=(lambda k: potential[k]))
-    #         print(file)
-    #         print(character)
-    #         print(potential)
-    #         print("")
+                # @staticmethod
+                # def unit_test_references():  # needs reworked
+                #     # reference_image_list, temp1, temp2 = openReferences()  # need to add maps
+                #
+                #     path = "Reference\\Image Sources"
+                #     reference_images = [image for image in listdir(path)]
+                #     for file in reference_images:
+                #         image_path = path + "/" + file
+                #         source_image = Image.open(image_path)
+                #         source_image_array = np.array(source_image)
+                #         threshold_image_array = threshold(source_image_array)
+                #         potential = whatCharacterIsThis(threshold_image_array, reference_image_list)
+                #         character = max(potential.keys(), key=(lambda k: potential[k]))
+                #         print(file)
+                #         print(character)
+                #         print(potential)
+                #         print("")
 
 
 def main_function():
@@ -157,7 +176,6 @@ def create_digit_image():
 
 
 def create_digit_references():
-
     reference_string = ['Reference\\DigitImageList.txt', 'Reference\\ColonImageList.txt']
     path = ["Reference\\Digit Sources", "Reference\\Digit Colon Source"]
     for x in range(0, 2):

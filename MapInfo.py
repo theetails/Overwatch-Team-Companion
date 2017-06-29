@@ -7,14 +7,23 @@ from GameObject import GameObject
 
 
 class MapInfo(GameObject):
-    mapDictionary = {"dorado": "escort", "eichenwalde": "transition", "hanamura": "assault", "hollywood": "transition",
-                     "ilios": "control", "king's row": "transition", "lijiang": "control", "nepal": "control",
-                     "numbani": "transition", "oasis": "control", "route66": "escort", "temple of anubis": "assault",
-                     "volskaya industries": "assault", "watchpoint gibraltar": "escort", "black forest": "arena",
-                     "castillo": "arena", "ecopoint antarctica": "arena", "necropolis": "arena",
-                     "horizon lunar colony": "assault", "ilios well": "arena", "oasis city center": "arena",
-                     "oasis gardens": "arena"}
-    currentMap = [None]
+    mapDictionary = {
+        # escort
+        "hanamura": "assault", "horizon lunar colony": "assault", "temple of anubis": "assault",
+        "volskaya industries": "assault",
+        # transition
+        "eichenwalde": "transition", "hollywood": "transition", "king's row": "transition", "numbani": "transition",
+        # control
+        "ilios": "control", "lijiang": "control", "nepal": "control", "oasis": "control",
+        # escort
+        "dorado": "escort", "route66": "escort", "watchpoint gibraltar": "escort",
+        # arena
+        "black forest": "arena", "castillo": "arena", "ecopoint antarctica": "arena", "ilios lighthouse": "arena",
+        "ilios ruins": "arena", "ilios well": "arena", "lijiang control center": "arena", "lijiang garden": "arena",
+        "lijiang night market": "arena", "necropolis": "arena", "nepal sanctum": "arena", "nepal shrine": "arena",
+        "nepal village": "arena", "oasis city center": "arena", "oasis gardens": "arena", "oasis university": "arena"
+    }
+    current_map = [None]
     currentMapType = "escort"
     currentMapSide = "offense"
     mapChange = False
@@ -37,6 +46,7 @@ class MapInfo(GameObject):
 
         self.debugMode = debug_mode
         self.mapReferences = self.read_references("Reference\\MapImageList.txt")
+        self.mapReferencesHighThreshold = self.read_references("Reference\\MapImageHighThreshold.txt")
         self.mapReferencesLijiang = self.read_references("Reference\\MapImageListLijiang.txt")
         self.mapReferencesTab = self.read_references("Reference\\MapImageListTab.txt")
         self.assaultReference = self.read_references("Reference\\ObjectiveListAssault.txt")
@@ -89,15 +99,15 @@ class MapInfo(GameObject):
             point_number = point_number + 1
 
     def map_type(self):
-        return self.mapDictionary[self.currentMap[0]]
+        return self.mapDictionary[self.current_map[0]]
 
     def identify_map(self, screen_img_array, view):
         potential = None
 
-        this_map_array = self.get_map(screen_img_array, view, False)
+        this_map_array = self.get_map(screen_img_array, view)
         if view == "Hero Select":
             potential = self.what_image_is_this(this_map_array, self.mapReferences)
-            self.objectiveProgress["gameEnd"] = None  # delete me with proper flow
+            # self.objectiveProgress["gameEnd"] = None  # TODO delete me with proper flow
         elif view == "Tab":
             potential = self.what_image_is_this(this_map_array, self.mapReferencesTab)
         this_map = max(potential.keys(), key=(lambda k: potential[k]))
@@ -109,26 +119,42 @@ class MapInfo(GameObject):
 
         if potential[this_map] > self.imageThreshold[view]:
             if this_map == "lijiang tower" and view == "Hero Select":
-                this_map = self.get_map(screen_img_array, "Hero Select", True)
-                potential = self.what_image_is_this(this_map, self.mapReferencesLijiang)
-                this_map = max(potential.keys(), key=(lambda k: potential[k]))
-                this_map = "lijiang-" + this_map
+                this_map_lijiang = self.get_map(screen_img_array, "Hero Select", lijiang=True)
+                potential = self.what_image_is_this(this_map_lijiang, self.mapReferencesLijiang)
+                this_map_lijiang = max(potential.keys(), key=(lambda k: potential[k]))
+                this_map = "lijiang-" + this_map_lijiang
             this_map_split = this_map.split("-")
-            if self.currentMap[0] != this_map_split[0]:
+            if self.current_map[0] != this_map_split[0]:
                 print("Map Changed")
                 self.mapChange = True
             else:
                 self.mapChange = False
-            self.previousMap = self.currentMap
-            self.currentMap = this_map_split
-            print(this_map)
+            self.previousMap = self.current_map
+            self.current_map = this_map_split
             return True
+        elif view == "Hero Select":
+            this_map_array = self.get_map(screen_img_array, view, threshold_balance=True)
+            potential = self.what_image_is_this(this_map_array, self.mapReferencesHighThreshold)
+            this_map = max(potential.keys(), key=(lambda k: potential[k]))
+            if potential[this_map] > self.imageThreshold[view]:
+                this_map_split = this_map.split("-")
+                if self.current_map[0] != this_map_split[0]:
+                    print("Map Changed")
+                    self.mapChange = True
+                else:
+                    self.mapChange = False
+                self.previousMap = self.current_map
+                self.current_map = this_map_split
+                print(this_map)
+                return True
+            else:
+                return False
         else:
             return False
 
     def identify_map_type(self):
-        if self.currentMap[0] != self.previousMap[0]:
-            if self.currentMap[0] != "unknown":
+        if self.current_map[0] != self.previousMap[0]:
+            if self.current_map[0] != "unknown":
                 this_map_type = self.map_type()
                 # temporary until detecting during tab
                 if this_map_type == "transition":
@@ -158,7 +184,7 @@ class MapInfo(GameObject):
                 line_to_write = str(value) + ': ' + potentialMap + '\n'
                 debug_file.write(line_to_write)
 
-    def get_map(self, img_array, mode, lijiang):
+    def get_map(self, img_array, mode, lijiang=False, threshold_balance=False):
         start_x = None
         end_x = None
         start_y = None
@@ -180,11 +206,16 @@ class MapInfo(GameObject):
             end_y = 62
         map_image = img_array[start_y:end_y, start_x:end_x]
         map_image_array = np.asarray(map_image)
+
         if mode == "Hero Select":
             scaled_image_array = imresize(map_image_array, (19, 115))
         elif mode == "Tab":
             scaled_image_array = map_image_array
-        new_image_array = self.threshold(scaled_image_array)
+
+        if not threshold_balance:
+            new_image_array = self.threshold(scaled_image_array)
+        else:
+            new_image_array = self.image_to_black_and_white(scaled_image_array, 252)
         return new_image_array
 
     def identify_side(self, img_array):
@@ -216,11 +247,11 @@ class MapInfo(GameObject):
             this_side = "defense"
         else:
             this_side = "neither"
-        # print ("rgb: " + str(red) + "," + str(green) + "," + str(blue))
+        # print("rgb: " + str(red) + "," + str(green) + "," + str(blue))
         return this_side
 
     def identify_objective_progress(self, img_array, mode="standard"):
-        if self.currentMap == [None] or self.objectiveProgress["gameOver"] is True:
+        if self.current_map == [None] or self.objectiveProgress["gameOver"] is True:
             return False
 
         map_type = self.map_type()
@@ -315,14 +346,13 @@ class MapInfo(GameObject):
             if potential[this_status] > self.imageThreshold["Assault"]:
                 self.identify_assault_point_progress(img_array, 1, mode)
             else:
-                print(2)
                 check_game_end = True
         if check_game_end:
             self.identify_game_end(img_array, mode)
         else:
             # if this_status != "Locked":
-                # Do I need to use this?
-                # this_side = self.teamFromPixel(pixel_to_check)
+            # Do I need to use this?
+            # this_side = self.teamFromPixel(pixel_to_check)
             # print(this_side)
             if this_status != self.objectiveProgress["assaultPoint"]:
                 self.objectiveProgress["assaultPoint"] = this_status
@@ -407,8 +437,8 @@ class MapInfo(GameObject):
             # check for lock symbol
             dimensions["start_x"] = 953
             dimensions["end_x"] = 965
-            dimensions["start_y"] = 111
-            dimensions["end_y"] = 125
+            dimensions["start_y"] = 123
+            dimensions["end_y"] = 137
 
             new_image_array = self.cut_and_threshold(img_array, dimensions)
             lock_reference = {
@@ -424,11 +454,11 @@ class MapInfo(GameObject):
                     # save image
                     img = Image.fromarray(new_image_array)
                     img.save(path + "\\Potential Objective.png", "PNG")
-                return
+                return new_image_array
         dimensions["start_x"] = 787
         dimensions["end_x"] = 1135
-        dimensions["start_y"] = 118
-        dimensions["end_y"] = 128
+        dimensions["start_y"] = 132
+        dimensions["end_y"] = 142
 
         if map_type == "transition":
             dimensions["start_x"] = 824
@@ -516,7 +546,7 @@ class MapInfo(GameObject):
                     'Defeat': self.gameEndReference["Defeat"]
                 }
                 potential = self.what_image_is_this(np.asarray(result), reference_dictionary)
-                print(potential)
+                # print(potential)
                 if potential["Defeat"] > self.imageThreshold["Defeat"]:  # max 7200
                     self.objectiveProgress["gameEnd"] = "Defeat"
                     print("Defeat! :(")

@@ -18,29 +18,35 @@ class GameObject:
         return reference_image_dictionary
 
     def threshold(self, image_array):
-        balance_array = []
-        new_array = image_array.copy()
-        new_array.setflags(write=1)
+        balance = self.get_image_balance(image_array)
 
-        # calculate mean (balance)
+        # ("Balance: " + str(balance))
+        # if 240 < balance < 252:
+        #     balance = 252
+        new_array = self.image_to_black_and_white(image_array, balance)
+        return new_array
+
+    @staticmethod
+    def get_image_balance(image_array):
+        balance_array = []
         for eachRow in image_array:
             for eachPixel in eachRow:
                 avg_num = reduce(lambda x, y: int(x) + int(y), eachPixel[:3]) / 3
                 balance_array.append(avg_num)
         balance = reduce(lambda x, y: x + y, balance_array) / len(balance_array)
-
-        new_array = self.image_to_black_and_white(new_array, balance)
-        return new_array
+        return balance
 
     @staticmethod
     def image_to_black_and_white(image_array, cut_off):
-        for rowNumber, eachRow in enumerate(image_array):
+        new_array = image_array.copy()
+        new_array.setflags(write=1)
+        for rowNumber, eachRow in enumerate(new_array):
             for pixelNumber, eachPixel in enumerate(eachRow):
                 if reduce(lambda x, y: int(x) + int(y), eachPixel[:3]) / 3 > cut_off:
-                    image_array[rowNumber][pixelNumber] = [255, 255, 255]  # White
+                    new_array[rowNumber][pixelNumber] = [255, 255, 255]  # White
                 else:
-                    image_array[rowNumber][pixelNumber] = [0, 0, 0]  # Black
-        return image_array
+                    new_array[rowNumber][pixelNumber] = [0, 0, 0]  # Black
+        return new_array
 
     @staticmethod
     def what_image_is_this(captured_image, reference_images_dictionary):

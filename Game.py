@@ -23,7 +23,7 @@ class Game:
         current_view = self.map.main(screen_img_array)
         if current_view:
             sp.call('cls', shell=True)
-            print(self.map.currentMap[0])
+            print(self.map.current_map)
             print(current_view)
             if current_view == "Tab":
                 sleep_time = 0.5
