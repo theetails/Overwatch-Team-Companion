@@ -47,7 +47,7 @@ class Game:
                     self.statistics.submit_stats(self.map.objectiveProgress["gameEnd"])
                     self.statistics = None
                 else:
-                    self.statistics.add_snapshot(self.heroes.heroesDictionary, self.map.get_current_map(),
+                    self.statistics.add_snapshot(self.heroes.heroesList, self.map.get_current_map(),
                                                  self.map.currentMapSide, self.map.objectiveProgress)
             self.heroes.main(screen_img_array, current_time, current_view)
 

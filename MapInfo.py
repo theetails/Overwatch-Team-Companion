@@ -681,11 +681,10 @@ class MapInfo(GameObject):
         print("Submit Stats and Clear")
 
     def get_current_map(self):
-        map_split = self.current_map.split("-")
         map_name = ""
-        for string in map_split:
+        for string in self.current_map:
             if string.isdigit():
                 break
             else:
-                map_name = map_name + "-" + string
-        return map_name
+                map_name = map_name + string + "-"
+        return map_name[:-1]
