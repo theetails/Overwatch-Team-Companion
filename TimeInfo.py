@@ -7,7 +7,7 @@ from GameObject import GameObject
 
 class TimeInfo(GameObject):
     def __init__(self, debug_mode):
-        self.elapsedTime = datetime.min
+        self.currentGameTime = datetime.min
         self.mapStartTime = None
         self.digitReferences = self.read_references("Reference\\DigitImageList.txt")
         self.colonReference = self.read_references("Reference\\ColonImageList.txt")
@@ -21,7 +21,7 @@ class TimeInfo(GameObject):
         self.debugMode = debug_mode
 
     def reset_time(self):
-        self.elapsedTime = datetime.min
+        self.currentGameTime = datetime.min
         self.mapStartTime = None
 
     def main(self, screen_image_array):
@@ -101,7 +101,7 @@ class TimeInfo(GameObject):
             if self.mapStartTime is not None:  # and time > 0:00
                 self.mapStartTime = datetime.now() - this_time_delta
                 print(datetime.strftime(self.mapStartTime, "%H:%M:%S"))
-            self.elapsedTime = this_time
+            self.currentGameTime = this_time
         else:
             print("Time not reading correctly")
             # TODO save time debug

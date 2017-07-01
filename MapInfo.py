@@ -24,12 +24,10 @@ class MapInfo(GameObject):
         "nepal village": "arena", "oasis city center": "arena", "oasis gardens": "arena", "oasis university": "arena"
     }
     current_map = [None]
-    currentMapType = "escort"
     currentMapSide = "offense"
     mapChange = False
 
     previousMap = [None]
-    previousMapType = None
     previousMapSide = None
 
     currentImageArray = None
@@ -74,6 +72,7 @@ class MapInfo(GameObject):
         return this_view
 
     def reset_objective_progress(self):
+
         self.objectiveProgress = {
             "currentType": None,
             "gameEnd": False,
@@ -155,25 +154,6 @@ class MapInfo(GameObject):
                 return False
         else:
             return False
-
-    def identify_map_type(self):
-        if self.current_map[0] != self.previousMap[0]:
-            if self.current_map[0] != "unknown":
-                this_map_type = self.map_type()
-                # temporary until detecting during tab
-                if this_map_type == "transition":
-                    this_map_type = "assault"
-            else:
-                this_map_type = "control"
-
-            self.previousMapType = self.currentMapType
-            self.currentMapType = this_map_type
-            return_value = True
-        else:
-            return_value = False
-
-        print(self.currentMapType)
-        return return_value
 
     def save_debug_data(self, current_time):
         path = "Debug"
@@ -460,8 +440,8 @@ class MapInfo(GameObject):
                 return new_image_array
         dimensions["start_x"] = 787
         dimensions["end_x"] = 1135
-        dimensions["start_y"] = 132
-        dimensions["end_y"] = 142
+        dimensions["start_y"] = 120  # was 132
+        dimensions["end_y"] = 130  # was 142
 
         if map_type == "transition":
             dimensions["start_x"] = 824
@@ -666,9 +646,15 @@ class MapInfo(GameObject):
         return self.threshold(map_image_array)
 
     def broadcast_options(self, broadcaster):
+        map_type = self.map_type()
+        if map_type == "transition":
+            if self.objectiveProgress["currentType"] is None:
+                map_type = "assault"
+            else:
+                map_type = self.objectiveProgress["currentType"]
         this_map = [
             self.currentMapSide,  # side options: offense, defense
-            self.currentMapType,  # type options: escort, assault, control
+            map_type,  # type options: escort, assault, control
             "single_hero"
         ]
 

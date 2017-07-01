@@ -48,7 +48,8 @@ class Game:
                     self.statistics = None
                 else:
                     self.statistics.add_snapshot(self.heroes.heroesList, self.map.get_current_map(),
-                                                 self.map.currentMapSide, self.map.objectiveProgress)
+                                                 self.map.currentMapSide, self.map.objectiveProgress,
+                                                 self.gameTime.currentGameTime)
             self.heroes.main(screen_img_array, current_time, current_view)
 
             if map_changed or side_changed:

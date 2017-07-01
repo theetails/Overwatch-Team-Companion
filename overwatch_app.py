@@ -185,7 +185,7 @@ def create_digit_references():
             image_path = path[x] + "/" + file
             source_image = Image.open(image_path)
             source_image_array = np.array(source_image)
-            # threshold_image_array = this_game_object.gameTime.threshold(source_image_array)
+            # threshold_image_array = this_game_object.currentGameTime.threshold(source_image_array)
             source_image_list = str(source_image_array.tolist())
             line_to_write = file[:-4] + '::' + source_image_list + '\n'
             reference_images_file.write(line_to_write)
