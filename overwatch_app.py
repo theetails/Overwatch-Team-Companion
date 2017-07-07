@@ -15,16 +15,21 @@ from Game import Game
 class AppController(ApplicationSession):
     def __init__(self, config=None):
         super().__init__(config)
-        self.debugMode = False
+
         self.loop = None
         self.uiObject = None
         self.subscriptionString = None
         self.subscription = None
         self.gameObject = None
 
-    async def onJoin(self, details):
         # Set debugMode to True if you want to save images in debug folder
-        self.debugMode = False
+        self.debugMode = True
+
+        self.this_map = "hollywood"
+        self.this_side = "offense"
+
+    async def onJoin(self, details):
+
 
         self.loop = asyncio.get_event_loop()
 
@@ -102,13 +107,11 @@ class AppController(ApplicationSession):
         this_game_object.map.save_debug_data("for_reference")
 
     def create_images_for_map_reference_objective(self):
-        this_map = "dorado"
-        this_side = "defense"
 
         this_game_object = Game(self.debugMode)
         screen_img_array = this_game_object.get_screen()
-        this_game_object.map.current_map[0] = this_map
-        this_game_object.map.currentMapSide = this_side
+        this_game_object.map.current_map[0] = self.this_map
+        this_game_object.map.currentMapSide = self.this_side
         this_game_object.map.identify_objective_progress(screen_img_array, "for_reference")
 
     @staticmethod

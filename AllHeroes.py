@@ -33,13 +33,14 @@ class AllHeroes(GameObject):
             else:
                 print(this_hero.currentHero)
 
-        if (len(failed_heroes) > 0) and self.debugMode:
-            failed_heroes.append(1)
+        if len(failed_heroes) > 0:
+            if self.debugMode:
+                for hero_number in failed_heroes:
+                    self.heroesDictionary[hero_number].save_debug_data(current_time)
+                screen_shot = Image.fromarray(screen_image_array)
+                screen_shot.save("Debug\\Potential " + current_time + " fullscreen" + ".png", "PNG")
             for hero_number in failed_heroes:
-                self.heroesDictionary[hero_number].save_debug_data(current_time)
                 self.heroesDictionary[hero_number].revert_previous_hero()
-            screen_shot = Image.fromarray(screen_image_array)
-            screen_shot.save("Debug\\Potential " + current_time + " fullscreen" + ".png", "PNG")
 
         # check for entire enemy team -> unknowns
         if current_view == "Tab":

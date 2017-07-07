@@ -304,11 +304,11 @@ class MapInfo(GameObject):
                 dimensions["end_y"] = 128
                 new_image_array = self.cut_and_threshold(img_array, dimensions)
                 potential = self.what_image_is_this(new_image_array, self.assaultReference)
-                this_status = max(potential.keys(), key=(lambda k: potential[k]))
-                this_status_split = this_status.split("-")
+                this_status_key = max(potential.keys(), key=(lambda k: potential[k]))
+                this_status_split = this_status_key.split("-")
                 this_status = this_status_split[0]
-                if potential[this_status] > self.imageThreshold["Assault"] and (this_status == "Locked"
-                                                                                or this_status_split[0] == "Done"):
+                if potential[this_status_key] > self.imageThreshold["Assault"] and \
+                        (this_status == "Locked" or this_status == "Done"):
                     print("Transition to Escort")
                     self.objectiveProgress["currentType"] = "escort"
                     return
@@ -391,20 +391,26 @@ class MapInfo(GameObject):
         # max 384, lower limit: 250
         if potential[this_status] > self.imageThreshold["Control"]:
             print(this_status)
-            print(potential)
+            # print(potential)
+
+            our_progress = 0
+            their_progress = 0
             if this_status != "Locked":
                 this_side = self.team_from_pixel(pixel_to_check["current"])
                 print("Current Controller: " + this_side)
             for pixelIndex, thisPixel in pixel_to_check["left"].items():
                 team_result = self.team_from_pixel(thisPixel)
                 if team_result == "neither":
-                    print("Our Team Progress: " + str(pixelIndex))
+                    our_progress = pixelIndex
+
                     break
             for pixelIndex, thisPixel in pixel_to_check["right"].items():
                 team_result = self.team_from_pixel(thisPixel)
                 if team_result == "neither":
-                    print("Their Team Progress: " + str(pixelIndex))
+                    their_progress = pixelIndex
+
                     break
+            print("Game Progress | Us: " + str(our_progress) + "   Them: " + str(their_progress))
         else:
             self.identify_game_end(img_array, mode)
 
@@ -478,20 +484,23 @@ class MapInfo(GameObject):
             print("Percent Complete: 100 - Complete Color Change")
 
         escort_progress_length = len(self.objectiveProgress["escortProgress"])
-        if percent_complete > 0 or escort_progress_length > 0:
-            self.objectiveProgress["escortProgress"].append(percent_complete)
 
         # check to see if we can confirm the statistics has started, unlocking the Escort Objective
         if escort_progress_length > 2:
             minimum = 101
             maximum = -1
-            for thisEscortProgress in self.objectiveProgress["escortProgress"][-3:]:  # last 3
+            for thisEscortProgress in self.objectiveProgress["escortProgress"]:
                 if thisEscortProgress > maximum:
                     maximum = thisEscortProgress
                 if thisEscortProgress < minimum:
                     minimum = thisEscortProgress
             if minimum != 0 and (maximum - minimum) < 5:
                 self.objectiveProgress["unlocked"] = True
+
+            del self.objectiveProgress["escortProgress"][0]
+
+        if percent_complete > 0 or escort_progress_length > 0:
+            self.objectiveProgress["escortProgress"].append(percent_complete)
 
         if percent_complete == 0:
             self.identify_game_end(img_array, mode)
