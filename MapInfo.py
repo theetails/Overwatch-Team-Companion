@@ -43,15 +43,17 @@ class MapInfo(GameObject):
         self.assaultPixelsToCheck = []
 
         self.debugMode = debug_mode
-        self.mapReferences = self.read_references("Reference\\MapImageList.txt")
-        self.mapReferencesHighThreshold = self.read_references("Reference\\MapImageHighThreshold.txt")
-        self.mapReferencesLijiang = self.read_references("Reference\\MapImageListLijiang.txt")
-        self.mapReferencesTab = self.read_references("Reference\\MapImageListTab.txt")
+        self.mapReferences = {
+            "Hero Select": self.read_references("Reference\\MapImageList.txt"),
+            "Tab": self.read_references("Reference\\MapImageListTab.txt"),
+            "Lijiang": self.read_references("Reference\\MapImageListLijiang.txt"),
+            "High Threshold": self.read_references("Reference\\MapImageHighThreshold.txt")
+        }
+
         self.assaultReference = self.read_references("Reference\\ObjectiveListAssault.txt")
         self.controlReference = self.read_references("Reference\\ObjectiveListControl.txt")
         self.gameEndReference = self.read_references("Reference\\GameEnd.txt")
 
-        self.reset_objective_progress()
         self.calculate_assault_progress_pixels()
 
     def main(self, screen_image_array, current_time):
@@ -65,22 +67,31 @@ class MapInfo(GameObject):
             if map_result:
                 this_view = "Hero Select"
             else:
-                return False
+                this_view = False
 
-        if (self.thisMapPotential < self.imageThreshold[this_view]) and self.debugMode:
-            self.save_debug_data(current_time)
+        # TODO check if removable
+        # if (self.thisMapPotential < self.imageThreshold[this_view]) and self.debugMode:
+            # self.save_debug_data(current_time)
+
         return this_view
 
     def reset_objective_progress(self):
-
         self.objectiveProgress = {
             "currentType": None,
             "gameEnd": False,
-            "unlocked": False,
-            "gameOver": False,
-            "assaultPoint": False,
-            "assaultPointProgress": []
+            "gameOver": False
         }
+
+        map_type = self.map_type()
+
+        if map_type == "assault" or map_type == "transition":
+            self.objectiveProgress["assaultPoint"] = False
+            self.objectiveProgress["assaultPointProgress"] = None
+        if map_type == "control":
+            self.objectiveProgress["controlProgress"] = [None, None, None]
+        if map_type == "escort"or map_type == "transition":
+            self.objectiveProgress["escortProgress"] = []
+            self.objectiveProgress["unlocked"] = False
 
     def calculate_assault_progress_pixels(self):
         assault_radius = 23  # px
@@ -108,11 +119,8 @@ class MapInfo(GameObject):
         potential = None
 
         this_map_array = self.get_map(screen_img_array, view)
-        if view == "Hero Select":
-            potential = self.what_image_is_this(this_map_array, self.mapReferences)
-            # self.objectiveProgress["gameEnd"] = None  # TODO delete me with proper flow
-        elif view == "Tab":
-            potential = self.what_image_is_this(this_map_array, self.mapReferencesTab)
+
+        potential = self.what_image_is_this(this_map_array, self.mapReferences[view])
         this_map = max(potential.keys(), key=(lambda k: potential[k]))
         self.previousImageArray = self.currentImageArray
         self.currentImageArray = this_map_array
@@ -123,7 +131,7 @@ class MapInfo(GameObject):
         if potential[this_map] > self.imageThreshold[view]:
             if this_map == "lijiang tower" and view == "Hero Select":
                 this_map_lijiang = self.get_map(screen_img_array, "Hero Select", lijiang=True)
-                potential = self.what_image_is_this(this_map_lijiang, self.mapReferencesLijiang)
+                potential = self.what_image_is_this(this_map_lijiang, self.mapReferences["Lijiang"])
                 this_map_lijiang = max(potential.keys(), key=(lambda k: potential[k]))
                 this_map = "lijiang-" + this_map_lijiang
             this_map_split = this_map.split("-")
@@ -137,7 +145,7 @@ class MapInfo(GameObject):
             return True
         elif view == "Hero Select":
             this_map_array = self.get_map(screen_img_array, view, threshold_balance=True)
-            potential = self.what_image_is_this(this_map_array, self.mapReferencesHighThreshold)
+            potential = self.what_image_is_this(this_map_array, self.mapReferences["High Threshold"])
             this_map = max(potential.keys(), key=(lambda k: potential[k]))
             if potential[this_map] > self.imageThreshold[view]:
                 this_map_split = this_map.split("-")
@@ -355,13 +363,7 @@ class MapInfo(GameObject):
                 print(pixelCoordinates)
                 print(this_pixel)
 
-        self.objectiveProgress["assaultPointProgress"].append(assault_percent_complete)
-        # if len(self.objectiveProgress["assaultPointProgress"] > 3):
-        # self.objectiveProgress["assaultPointProgress"].pop(0)
-        # if assault_percent_complete >
-        # for percentage in self.objectiveProgress["assaultPointProgress"]:
-        # True
-        # if self.objectiveProgress["assaultPointProgress"]:
+        self.objectiveProgress["assaultPointProgress"] = assault_percent_complete
         print(assault_percent_complete)
 
     def identify_control_objective_progress(self, img_array, mode="standard"):
@@ -390,7 +392,7 @@ class MapInfo(GameObject):
 
         # max 384, lower limit: 250
         if potential[this_status] > self.imageThreshold["Control"]:
-            print(this_status)
+            # print(this_status)
             # print(potential)
 
             our_progress = 0
@@ -402,15 +404,15 @@ class MapInfo(GameObject):
                 team_result = self.team_from_pixel(thisPixel)
                 if team_result == "neither":
                     our_progress = pixelIndex
-
                     break
             for pixelIndex, thisPixel in pixel_to_check["right"].items():
                 team_result = self.team_from_pixel(thisPixel)
                 if team_result == "neither":
                     their_progress = pixelIndex
-
                     break
-            print("Game Progress | Us: " + str(our_progress) + "   Them: " + str(their_progress))
+            if self.objectiveProgress["controlProgress"][1] != our_progress or self.objectiveProgress["controlProgress"][2] != their_progress:
+                print("Game Progress | Us: " + str(our_progress) + "   Them: " + str(their_progress))
+            self.objectiveProgress["controlProgress"] = [this_status, our_progress, their_progress]
         else:
             self.identify_game_end(img_array, mode)
 
@@ -418,9 +420,6 @@ class MapInfo(GameObject):
 
     def identify_escort_objective_progress(self, img_array, map_type, mode="standard"):
         dimensions = {}
-
-        if "escortProgress" not in self.objectiveProgress:
-            self.objectiveProgress["escortProgress"] = []
 
         if map_type == "escort" and self.objectiveProgress["unlocked"] is False:
             # check for lock symbol
@@ -437,7 +436,7 @@ class MapInfo(GameObject):
 
             if potential["Locked"] > self.imageThreshold["Assault"]:  # max 166?
                 print("Locked")
-                print(potential)
+                # print(potential)
                 if mode == "for_reference":
                     path = "Debug"
                     # save image
@@ -486,21 +485,24 @@ class MapInfo(GameObject):
         escort_progress_length = len(self.objectiveProgress["escortProgress"])
 
         # check to see if we can confirm the statistics has started, unlocking the Escort Objective
+
+        self.objectiveProgress["escortProgress"].append(percent_complete)
+
         if escort_progress_length > 2:
-            minimum = 101
-            maximum = -1
-            for thisEscortProgress in self.objectiveProgress["escortProgress"]:
-                if thisEscortProgress > maximum:
-                    maximum = thisEscortProgress
-                if thisEscortProgress < minimum:
-                    minimum = thisEscortProgress
-            if minimum != 0 and (maximum - minimum) < 5:
-                self.objectiveProgress["unlocked"] = True
+            if self.objectiveProgress["unlocked"] is False:
+                minimum = 101
+                maximum = -1
+                for thisEscortProgress in self.objectiveProgress["escortProgress"]:
+                    if thisEscortProgress > maximum:
+                        maximum = thisEscortProgress
+                    if thisEscortProgress < minimum:
+                        minimum = thisEscortProgress
+                if minimum != 0 and (maximum - minimum) < 5:
+                    self.objectiveProgress["unlocked"] = True
 
             del self.objectiveProgress["escortProgress"][0]
 
-        if percent_complete > 0 or escort_progress_length > 0:
-            self.objectiveProgress["escortProgress"].append(percent_complete)
+        print(self.objectiveProgress["escortProgress"])
 
         if percent_complete == 0:
             self.identify_game_end(img_array, mode)
@@ -524,7 +526,6 @@ class MapInfo(GameObject):
                 'Victory': self.gameEndReference["Victory"]
             }
             potential = self.what_image_is_this(np.asarray(result), reference_dictionary)
-            print(potential)
             if potential["Victory"] > self.imageThreshold["Victory"]:
                 self.objectiveProgress["gameEnd"] = "Victory"
                 print("Victory!")
@@ -538,12 +539,11 @@ class MapInfo(GameObject):
                     'Defeat': self.gameEndReference["Defeat"]
                 }
                 potential = self.what_image_is_this(np.asarray(result), reference_dictionary)
-                # print(potential)
                 if potential["Defeat"] > self.imageThreshold["Defeat"]:  # max 7200
                     self.objectiveProgress["gameEnd"] = "Defeat"
                     print("Defeat! :(")
                     self.set_game_over()
-        if (type(result) is not bool) and (mode == "for_reference"):
+        if (mode == "for_reference") and (type(result) is not bool):
             path = "Debug"
             # save image
             result.save(path + "\\Game End.png", "PNG")
@@ -629,10 +629,10 @@ class MapInfo(GameObject):
                 or ("end_y" not in new_dimensions) \
                 or ("start_x" not in new_dimensions) \
                 or ("end_x" not in new_dimensions):
-            path = "Debug"
+            # path = "Debug"
             # save image
-            img = Image.fromarray(cropped_image_array)
-            img.save(path + "\\" + mode + ".png", "PNG")
+            # img = Image.fromarray(cropped_image_array)
+            # img.save(path + "\\" + mode + ".png", "PNG")
             return False
         new_cropped_image_array = self.cut_image(cropped_image_array, new_dimensions)
         img = Image.fromarray(new_cropped_image_array)
@@ -673,7 +673,6 @@ class MapInfo(GameObject):
 
     def set_game_over(self):
         self.objectiveProgress["gameOver"] = True
-        print("Submit Stats and Clear")
 
     def get_current_map(self):
         map_name = ""
@@ -683,3 +682,10 @@ class MapInfo(GameObject):
             else:
                 map_name = map_name + string + "-"
         return map_name[:-1]
+
+    def get_objective_progress(self):
+        objective_dictionary = self.objectiveProgress.copy()
+        del objective_dictionary["gameOver"]
+        del objective_dictionary["gameEnd"]
+
+        return objective_dictionary

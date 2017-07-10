@@ -24,11 +24,11 @@ class TimeInfo(GameObject):
         self.currentGameTime = datetime.min
         self.mapStartTime = None
 
-    def main(self, screen_image_array):
-        self.identify_time(screen_image_array)
+    def main(self, screen_image_array, computer_time):
+        self.identify_time(screen_image_array, computer_time)
         return True
 
-    def identify_time(self, img_array):
+    def identify_time(self, img_array, computer_time):
         colon_found = False
         digits_before_colon = 0
         digits_after_colon = 0
@@ -92,16 +92,25 @@ class TimeInfo(GameObject):
                 break
             else:
                 loop_count = loop_count + 1
-        if time_string[1] == ":" or time_string[2] == ":":
+        if time_string[1] == ":" or time_string[2] == ":":  # assume correct read
             this_time = datetime.strptime(time_string, "%M:%S")
+            self.currentGameTime = this_time
+            print(datetime.strftime(this_time, "%M:%S"))
+
             this_time_seconds = int(time_string_split[1])
             this_time_minutes = int(time_string_split[0])
             this_time_delta = timedelta(minutes=this_time_minutes, seconds=this_time_seconds)
-            print(datetime.strftime(this_time, "%M:%S"))
-            if self.mapStartTime is not None:  # and time > 0:00
-                self.mapStartTime = datetime.now() - this_time_delta
+
+            calculated_start_time = computer_time - this_time_delta
+            if self.mapStartTime is None:  # and time > 0:00
+                self.mapStartTime = calculated_start_time
                 print(datetime.strftime(self.mapStartTime, "%H:%M:%S"))
-            self.currentGameTime = this_time
+
+            seconds_difference = (calculated_start_time - self.mapStartTime).total_seconds()
+            print(seconds_difference)
+            if abs(seconds_difference) > 60:
+                self.mapStartTime = computer_time - this_time_delta
+
         else:
             print("Time not reading correctly")
             # TODO save time debug
@@ -118,6 +127,14 @@ class TimeInfo(GameObject):
     def cut_and_threshold(self, img_array, dimensions):
         map_image_array = self.cut_image(img_array, dimensions)
         return self.threshold(map_image_array)
+
+    def get_current_game_time(self, computer_time):
+        if self.mapStartTime is not None:
+            map_time_delta = computer_time - self.mapStartTime
+        else:
+            map_time_delta = timedelta(seconds=0)
+        map_datetime = datetime.min + map_time_delta
+        return map_datetime
 
     @staticmethod
     def save_debug_data(img_array, loop_count):

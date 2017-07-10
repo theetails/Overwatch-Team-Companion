@@ -30,7 +30,6 @@ class AppController(ApplicationSession):
 
     async def onJoin(self, details):
 
-
         self.loop = asyncio.get_event_loop()
 
         # Initialize Game Object & obtain Subscription String
@@ -200,7 +199,7 @@ main_function()
 '''
 To Do:
 teams.js
-    Javascript -> Object Oriented
+    Javascript -> clean up for cleaner additions
     Allow two secondary healers instead of a primary
     Smart Flanker selection (flanker could also be a front line)
     Same for Main Tanks / Secondary
