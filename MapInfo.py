@@ -3,6 +3,8 @@ import numpy as np
 from scipy.misc import imresize
 import operator
 from functools import reduce
+import copy
+
 from GameObject import GameObject
 
 
@@ -243,6 +245,8 @@ class MapInfo(GameObject):
         return this_side
 
     def identify_objective_progress(self, img_array, mode="standard"):
+        if "gameOver" not in self.objectiveProgress:
+            return False
         if self.current_map == [None] or self.objectiveProgress["gameOver"] is True:
             return False
         map_type = self.map_type()
@@ -252,14 +256,16 @@ class MapInfo(GameObject):
             # need to go from assault to escort
             if self.objectiveProgress["currentType"] is None:
                 self.objectiveProgress["currentType"] = "assault"
+        else:
+            self.objectiveProgress["currentType"] = map_type
 
-        if map_type == "assault" or self.objectiveProgress["currentType"] == "assault":
+        if self.objectiveProgress["currentType"] == "assault":
             new_image_array = self.identify_assault_objective_progress(img_array, map_type, mode)
 
-        if map_type == "control" or self.objectiveProgress["currentType"] == "control":
+        if self.objectiveProgress["currentType"] == "control":
             new_image_array = self.identify_control_objective_progress(img_array, mode)
 
-        if map_type == "escort" or self.objectiveProgress["currentType"] == "escort":
+        if self.objectiveProgress["currentType"] == "escort":
             new_image_array = self.identify_escort_objective_progress(img_array, map_type, mode)
 
         if mode == "for_reference":
@@ -684,7 +690,7 @@ class MapInfo(GameObject):
         return map_name[:-1]
 
     def get_objective_progress(self):
-        objective_dictionary = self.objectiveProgress.copy()
+        objective_dictionary = copy.deepcopy(self.objectiveProgress)
         del objective_dictionary["gameOver"]
         del objective_dictionary["gameEnd"]
 

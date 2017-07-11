@@ -46,7 +46,6 @@ class Hero:
         self.screenPositionTab = {"start_x": start_x, "end_x": end_x, "start_y": start_y, "end_y": end_y}
 
     def save_debug_data(self, current_time):
-        print("Save Hero Debug Data")
         path = "Debug"
 
         # save image
@@ -57,7 +56,6 @@ class Hero:
         for potentialCharacter, value in sorted(self.potential.items(), key=operator.itemgetter(1), reverse=True):
             line_to_write = str(value) + ': ' + potentialCharacter + '\n'
             debug_file.write(line_to_write)
-        print("Done")
 
     def set_potential(self, this_potential):
         self.previousPotential = self.potential
