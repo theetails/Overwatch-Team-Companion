@@ -8,6 +8,7 @@ class Statistics:
         self.round_start_time = []
         self.new_round = False
         self.previous_time = None
+        self.temporary_round_start = False
 
     def add_snapshot(self, heroes, current_map, map_side, objective_progress, game_time, current_system_time):
         self.snapshots.append(
@@ -40,41 +41,67 @@ class Statistics:
                     (self.round_start_time[-1]["start_time"] - calculated_round_start_time).total_seconds())
                 print("Start Time Difference: " + str(system_start_time_difference))
                 if system_start_time_difference > 1:
-                    previous_verified_snapshot = None
-                    for snapshot in reversed(self.snapshots[:-1]):
-                        if snapshot.game_time["verified"]:
-                            previous_verified_snapshot = snapshot
-                            break
-                    if previous_verified_snapshot is None:
-                        self.round_start_time = []
-                        self.round_start_time.append({
-                            "start_time": calculated_round_start_time,
-                            "game_time": current_game_time
-                        })
+                    if self.temporary_round_start:
+                        self.round_start_time[-1]["start_time"] = calculated_round_start_time
+                        self.temporary_round_start = False
                     else:
-                        previous_verified_game_time = previous_verified_snapshot.game_time["datetime"]
-                        game_time_difference = abs(
-                            (latest_snapshot.game_time["datetime"] - previous_verified_game_time).total_seconds())
-                        print("Game Time Difference: " + str(game_time_difference))
-                        if game_time_difference < 1.5:
-                            previous_round_game_time_difference = (
-                                latest_snapshot.game_time["datetime"] - self.round_start_time[-1][
-                                    "game_time"]).total_seconds()
-                            if previous_round_game_time_difference < 1:
-                                del self.round_start_time[-1]
-                            previous_verified_snapshot.game_time["verified"] = False
-                        else:
+                        previous_verified_snapshot = None
+                        for snapshot in reversed(self.snapshots[:-1]):
+                            if snapshot.game_time["verified"]:
+                                previous_verified_snapshot = snapshot
+                                break
+                        if previous_verified_snapshot is None:
+                            self.round_start_time = []
                             self.round_start_time.append({
                                 "start_time": calculated_round_start_time,
                                 "game_time": current_game_time
                             })
+                        else:
+                            previous_verified_game_time = previous_verified_snapshot.game_time["datetime"]
+                            game_time_difference = abs(
+                                (latest_snapshot.game_time["datetime"] - previous_verified_game_time).total_seconds())
+                            print("Game Time Difference: " + str(game_time_difference))
+                            if game_time_difference < 1.5:
+                                previous_round_game_time_difference = (
+                                    latest_snapshot.game_time["datetime"] - self.round_start_time[-1][
+                                        "game_time"]).total_seconds()
+                                # if previous_round_game_time_difference < 1:
+                                    # del self.round_start_time[-1]
+                                previous_verified_snapshot.game_time["verified"] = False
+                            else:
+                                self.round_start_time.append({
+                                    "start_time": calculated_round_start_time,
+                                    "game_time": current_game_time
+                                })
             else:
                 self.round_start_time.append({
                     "start_time": calculated_round_start_time,
                     "game_time": current_game_time
                 })
         elif not safe_to_adjust:
-            if self.previous_time is not None:
+            if self.previous_time is not None and not latest_snapshot.game_time["verified"]:
+                if self.snapshots[-2].objective_progress["controlProgress"][0] not in [None, "Prepare"]:
+                    current_game_time = self.previous_time
+                    game_time_delta = timedelta(minutes=self.previous_time.minute, seconds=self.previous_time.second)
+                    calculated_round_start_time = latest_snapshot.system_time - game_time_delta
+                    self.round_start_time.append({
+                        "start_time": calculated_round_start_time,
+                        "game_time": self.previous_time
+                    })
+                    self.temporary_round_start = True
+                else:
+                    current_game_time = self.previous_time
+            elif latest_snapshot.game_time["verified"]:
+                self.previous_time = latest_snapshot.game_time["datetime"]
+                current_game_time = self.previous_time
+                game_time_delta = timedelta(minutes=current_game_time.minute, seconds=current_game_time.second)
+                calculated_round_start_time = latest_snapshot.system_time - game_time_delta
+                self.round_start_time[-1] = {
+                    "start_time": calculated_round_start_time,
+                    "game_time": current_game_time
+                }
+                self.temporary_round_start = True
+            elif self.previous_time is not None:
                 current_game_time = self.previous_time
             else:
                 current_game_time = datetime.min
