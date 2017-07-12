@@ -7,8 +7,8 @@ from GameObject import GameObject
 
 class TimeInfo(GameObject):
     def __init__(self, debug_mode):
-        self.currentGameTime = datetime.min
-        self.mapStartTime = None
+        self.debugMode = debug_mode
+
         self.digitReferences = self.read_references("Reference\\DigitImageList.txt")
         self.colonReference = self.read_references("Reference\\ColonImageList.txt")
         self.digitDimensions = {
@@ -17,18 +17,19 @@ class TimeInfo(GameObject):
             "start_y": 73,
             "end_y": 85
         }
-
-        self.debugMode = debug_mode
+        self.game_datetime = datetime.min
+        self.roundStartTime = None
+        self.newly_verified_game_time = False
 
     def reset_time(self):
-        self.currentGameTime = datetime.min
-        self.mapStartTime = None
+        self.game_datetime = datetime.min
+        self.roundStartTime = None
 
     def main(self, screen_image_array, computer_time):
         self.identify_time(screen_image_array, computer_time)
         return True
 
-    def identify_time(self, img_array, computer_time):
+    def identify_time(self, img_array, system_time):
         colon_found = False
         digits_before_colon = 0
         digits_after_colon = 0
@@ -65,6 +66,7 @@ class TimeInfo(GameObject):
             this_digit_split = this_digit_full.split("-")
             this_digit = this_digit_split[0]
 
+            # these digits are very similar, checking unique pixels to each number
             if this_digit == "3" or this_digit == "6" or this_digit == "8":
                 if this_digit_array[6][2][0] == 0:
                     this_digit = "3"
@@ -76,7 +78,6 @@ class TimeInfo(GameObject):
             # print (this_digit)
             # print (potential)
             time_string = time_string + str(this_digit)
-            time_string_split = time_string.split(":")
 
             if colon_found:
                 digits_after_colon = digits_after_colon + 1
@@ -93,30 +94,37 @@ class TimeInfo(GameObject):
             else:
                 loop_count = loop_count + 1
         if time_string[1] == ":" or time_string[2] == ":":  # assume correct read
-            this_time = datetime.strptime(time_string, "%M:%S")
-            self.currentGameTime = this_time
-            print(datetime.strftime(this_time, "%M:%S"))
+            this_time_formatted = datetime.strptime(time_string, "%M:%S")
+            self.game_datetime = this_time_formatted
+            print("Game Time: " + datetime.strftime(this_time_formatted, "%M:%S"))
+            self.newly_verified_game_time = True
 
-            this_time_seconds = int(time_string_split[1])
-            this_time_minutes = int(time_string_split[0])
-            this_time_delta = timedelta(minutes=this_time_minutes, seconds=this_time_seconds)
-
-            calculated_start_time = computer_time - this_time_delta
-            if self.mapStartTime is None:  # and time > 0:00
-                self.mapStartTime = calculated_start_time
-                print(datetime.strftime(self.mapStartTime, "%H:%M:%S"))
-
-            seconds_difference = (calculated_start_time - self.mapStartTime).total_seconds()
-            print(seconds_difference)
-            if abs(seconds_difference) > 60:
-                self.mapStartTime = computer_time - this_time_delta
+            # self.correct_round_start_time(system_time, time_string)
 
         else:
             print("Time not reading correctly")
             # TODO save time debug
 
-    # check to see if the times line up??
-    # does a replay show the current game time? probably
+    # TODO remove function? (in Statistics)
+    def correct_round_start_time(self, system_time, game_time_string):
+        game_time_string_split = game_time_string.split(":")
+        game_time_seconds = int(game_time_string_split[1])
+        game_time_minutes = int(game_time_string_split[0])
+        game_time_delta = timedelta(minutes=game_time_minutes, seconds=game_time_seconds)
+
+        calculated_start_time = system_time - game_time_delta
+
+        # initial time
+        if self.roundStartTime is None:  # and time > 0:00
+            print("Round Start Time: " + datetime.strftime(calculated_start_time, "%H:%M:%S"))
+            self.roundStartTime = calculated_start_time
+
+        seconds_difference = (calculated_start_time - self.roundStartTime).total_seconds()
+        # print(seconds_difference)
+        if abs(seconds_difference) > 60:
+            self.roundStartTime = system_time - game_time_delta
+
+        # TODO does a replay show the current game time? probably
 
     @staticmethod
     def cut_image(img_array, dimensions):
@@ -128,13 +136,17 @@ class TimeInfo(GameObject):
         map_image_array = self.cut_image(img_array, dimensions)
         return self.threshold(map_image_array)
 
-    def get_current_game_time(self, computer_time):
-        if self.mapStartTime is not None:
-            map_time_delta = computer_time - self.mapStartTime
-        else:
-            map_time_delta = timedelta(seconds=0)
-        map_datetime = datetime.min + map_time_delta
-        return map_datetime
+    def get_verified_game_time(self, computer_time):
+        time_dictionary = {
+            "datetime": self.game_datetime,
+            "verified": self.newly_verified_game_time
+        }
+
+        # the next tick will be calculated
+        if self.newly_verified_game_time:
+            self.newly_verified_game_time = False
+
+        return time_dictionary
 
     @staticmethod
     def save_debug_data(img_array, loop_count):

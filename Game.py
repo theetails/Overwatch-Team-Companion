@@ -15,8 +15,8 @@ class Game:
         self.debugMode = debug_mode
         self.heroes = AllHeroes(debug_mode)
         self.map = MapInfo(debug_mode)
-        self.gameTime = TimeInfo(debug_mode)
         self.statistics = None
+        self.gameTime = TimeInfo(debug_mode)
         self.game_over = True
 
     def main(self, broadcaster):
@@ -27,7 +27,8 @@ class Game:
         screen_img_array = self.get_screen()
         current_view = self.map.main(screen_img_array, current_time_string)
         if current_view:
-            sp.call('cls', shell=True)
+            # TODO uncomment
+            # sp.call('cls', shell=True)
             print(self.map.get_current_map())
             print(current_view)
             if current_view == "Tab":
@@ -68,14 +69,14 @@ class Game:
             if self.map.objectiveProgress["gameOver"]:
                 self.game_over = True
                 print("Submit Stats and Clear")
-                self.statistics.submit_stats(self.map.objectiveProgress["gameEnd"], current_time_string)
+                self.statistics.submit_stats(self.map.objectiveProgress["gameEnd"], current_time)
                 self.statistics = None
                 # TODO remove
                 # self.map.reset_objective_progress()
             else:
                 self.statistics.add_snapshot(self.heroes.heroesList, self.map.get_current_map(),
                                              self.map.currentMapSide, copy.deepcopy(self.map.get_objective_progress()),
-                                             self.gameTime.get_current_game_time(current_time))
+                                             self.gameTime.get_verified_game_time(current_time), current_time)
 
         return sleep_time
 

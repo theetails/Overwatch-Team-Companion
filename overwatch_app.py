@@ -25,7 +25,7 @@ class AppController(ApplicationSession):
         # Set debugMode to True if you want to save images in debug folder
         self.debugMode = True
 
-        self.this_map = "hollywood"
+        self.this_map = "oasis"
         self.this_side = "offense"
 
     async def onJoin(self, details):
@@ -83,6 +83,7 @@ class AppController(ApplicationSession):
             source_image_list = str(threshold_image_array.tolist())
             line_to_write = file[:-4] + '::' + source_image_list + '\n'
             reference_images_file.write(line_to_write)
+        print("Done")
 
     def create_images_for_hero_reference(self):
         this_game_object = Game(self.debugMode)
@@ -91,6 +92,7 @@ class AppController(ApplicationSession):
             hero = this_game_object.heroes.heroesDictionary[heroNumber]
             this_game_object.heroes.identify_hero(screen_img_array, hero, "Tab")  # "Tab" or "Hero Select"
             hero.save_debug_data("for_reference")
+        print("Done")
 
     def create_images_for_map_reference_hero_select(self):
         this_game_object = Game(self.debugMode)
@@ -98,20 +100,23 @@ class AppController(ApplicationSession):
         this_game_object.map.currentImageArray = this_game_object.map.get_map(
             screen_img_array, "Hero Select", lijiang=False)  # , threshold_balance=True)
         this_game_object.map.save_debug_data("for_reference")
+        print("Done")
 
     def create_images_for_map_reference_tab(self):
         this_game_object = Game(self.debugMode)
         screen_img_array = this_game_object.get_screen()
         this_game_object.map.currentImageArray = this_game_object.map.get_map(screen_img_array, "Tab", lijiang=False)
         this_game_object.map.save_debug_data("for_reference")
+        print("Done")
 
     def create_images_for_map_reference_objective(self):
-
         this_game_object = Game(self.debugMode)
         screen_img_array = this_game_object.get_screen()
         this_game_object.map.current_map[0] = self.this_map
         this_game_object.map.currentMapSide = self.this_side
+        this_game_object.map.reset_objective_progress()
         this_game_object.map.identify_objective_progress(screen_img_array, "for_reference")
+        print("Done")
 
     @staticmethod
     def create_map_references():
@@ -144,24 +149,25 @@ class AppController(ApplicationSession):
                 source_image_list = str(source_image_array.tolist())
                 line_to_write = file[:-4] + '::' + source_image_list + '\n'
                 reference_images_file.write(line_to_write)
+        print("Done")
 
-                # @staticmethod
-                # def unit_test_references():  # needs reworked
-                #     # reference_image_list, temp1, temp2 = openReferences()  # need to add maps
-                #
-                #     path = "Reference\\Image Sources"
-                #     reference_images = [image for image in listdir(path)]
-                #     for file in reference_images:
-                #         image_path = path + "/" + file
-                #         source_image = Image.open(image_path)
-                #         source_image_array = np.array(source_image)
-                #         threshold_image_array = threshold(source_image_array)
-                #         potential = whatCharacterIsThis(threshold_image_array, reference_image_list)
-                #         character = max(potential.keys(), key=(lambda k: potential[k]))
-                #         print(file)
-                #         print(character)
-                #         print(potential)
-                #         print("")
+    # @staticmethod
+    # def unit_test_references():  # needs reworked
+    #     # reference_image_list, temp1, temp2 = openReferences()  # need to add maps
+    #
+    #     path = "Reference\\Image Sources"
+    #     reference_images = [image for image in listdir(path)]
+    #     for file in reference_images:
+    #         image_path = path + "/" + file
+    #         source_image = Image.open(image_path)
+    #         source_image_array = np.array(source_image)
+    #         threshold_image_array = threshold(source_image_array)
+    #         potential = whatCharacterIsThis(threshold_image_array, reference_image_list)
+    #         character = max(potential.keys(), key=(lambda k: potential[k]))
+    #         print(file)
+    #         print(character)
+    #         print(potential)
+    #         print("")
 
 
 def main_function():
@@ -175,6 +181,7 @@ def create_digit_image():
     this_game_object = Game(False)
     screen_img_array = this_game_object.get_screen()
     this_game_object.gameTime.main(screen_img_array)
+    print("Done")
 
 
 def create_digit_references():
@@ -187,17 +194,19 @@ def create_digit_references():
             image_path = path[x] + "/" + file
             source_image = Image.open(image_path)
             source_image_array = np.array(source_image)
-            # threshold_image_array = this_game_object.currentGameTime.threshold(source_image_array)
+            # threshold_image_array = this_game_object.game_datetime.threshold(source_image_array)
             source_image_list = str(source_image_array.tolist())
             line_to_write = file[:-4] + '::' + source_image_list + '\n'
             reference_images_file.write(line_to_write)
+    print("Done")
 
 
 main_function()
 # create_digit_image()
 # create_digit_references()
+
+# TODO List
 '''
-To Do:
 teams.js
     Javascript -> clean up for cleaner additions
     Allow two secondary healers instead of a primary
@@ -212,6 +221,8 @@ overwatch_app.py
         Keep track of progress
         Add Capture the Flag
     Keep track of Game Time
+    Optimize Storage of Images (only one number per pixel instead of three identical numbers)
+    Optimize Image Search (Search last hero first)
     Login System
     Detect Screen Resolution - Currently only 1080p
     Detect Screen Color Differences

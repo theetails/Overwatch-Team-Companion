@@ -38,7 +38,14 @@ class MapInfo(GameObject):
     previousImageArray = None
     previousPotential = None
 
-    imageThreshold = {"Hero Select": 1850, "Tab": 1700, "Assault": 135, "Control": 250, "Victory": 6500, "Defeat": 5800}
+    imageThreshold = {
+        "Hero Select": 1875,
+        "Tab": 1700,
+        "Assault": 135,
+        "Control": 270,  # max 384, lower limit: 250
+        "Victory": 6500,
+        "Defeat": 5800
+    }
 
     def __init__(self, debug_mode):
         self.objectiveProgress = {}
@@ -71,9 +78,9 @@ class MapInfo(GameObject):
             else:
                 this_view = False
 
-        # TODO check if removable
-        # if (self.thisMapPotential < self.imageThreshold[this_view]) and self.debugMode:
-            # self.save_debug_data(current_time)
+                # TODO check if removable
+                # if (self.thisMapPotential < self.imageThreshold[this_view]) and self.debugMode:
+                # self.save_debug_data(current_time)
 
         return this_view
 
@@ -90,8 +97,8 @@ class MapInfo(GameObject):
             self.objectiveProgress["assaultPoint"] = False
             self.objectiveProgress["assaultPointProgress"] = None
         if map_type == "control":
-            self.objectiveProgress["controlProgress"] = [None, None, None]
-        if map_type == "escort"or map_type == "transition":
+            self.objectiveProgress["controlProgress"] = [None, None, None, None]
+        if map_type == "escort" or map_type == "transition":
             self.objectiveProgress["escortProgress"] = []
             self.objectiveProgress["unlocked"] = False
 
@@ -129,7 +136,6 @@ class MapInfo(GameObject):
         self.previousPotential = self.potential
         self.potential = potential
         self.thisMapPotential = potential[this_map]
-
         if potential[this_map] > self.imageThreshold[view]:
             if this_map == "lijiang tower" and view == "Hero Select":
                 this_map_lijiang = self.get_map(screen_img_array, "Hero Select", lijiang=True)
@@ -251,7 +257,6 @@ class MapInfo(GameObject):
             return False
         map_type = self.map_type()
         new_image_array = None
-
         if map_type == "transition":
             # need to go from assault to escort
             if self.objectiveProgress["currentType"] is None:
@@ -379,33 +384,67 @@ class MapInfo(GameObject):
             'start_y': 78,
             'end_y': 102
         }
-
-        pixel_to_check = {
-            'current': img_array[108][959],
-            'left': {
-                0: img_array[91][774],
-                1: img_array[91][814]
-            },
-            'right': {
-                0: img_array[91][1146],
-                1: img_array[91][1106]
-            }
-        }
-
+        pixel_current_height = 108
+        pixel_side_height = 91
+        reference = self.controlReference
+        status_addendum = ""
         new_image_array = self.cut_and_threshold(img_array, dimensions)
-        potential = self.what_image_is_this(new_image_array, self.controlReference)
+        objective_identified = self.identify_control_core(img_array, new_image_array, pixel_current_height, pixel_side_height,
+                                                     reference, status_addendum)
+
+        if objective_identified is False:
+            # check if locked between rounds
+            dimensions['start_y'] = 115
+            dimensions['end_y'] = 139
+            pixel_current_height = 145
+            pixel_side_height = 128
+            reference = {"Prepare": self.controlReference["Locked"]}
+            status_addendum = ""
+            new_image_array = self.cut_and_threshold(img_array, dimensions)
+            objective_identified = self.identify_control_core(img_array, new_image_array, pixel_current_height, pixel_side_height,
+                                                         reference, status_addendum)
+            if objective_identified is False:
+                # check for overtime
+
+                dimensions['start_y'] = 133
+                dimensions['end_y'] = 157
+                pixel_current_height = 163
+                pixel_side_height = 146
+                reference = self.controlReference
+                status_addendum = "-Overtime"
+                new_image_array = self.cut_and_threshold(img_array, dimensions)
+                objective_identified = self.identify_control_core(img_array, new_image_array, pixel_current_height,
+                                                             pixel_side_height,
+                                                             reference, status_addendum)
+                if objective_identified is False:
+                    self.identify_game_end(img_array, mode)
+
+        return new_image_array
+
+    def identify_control_core(self, img_array, new_image_array, pixel_current_height, pixel_side_height, reference,
+                              status_addendum):
+        this_side = "neither"
+
+        our_progress = 0
+        their_progress = 0
+
+        potential = self.what_image_is_this(new_image_array, reference)
         this_status = max(potential.keys(), key=(lambda k: potential[k]))
-
-        # max 384, lower limit: 250
         if potential[this_status] > self.imageThreshold["Control"]:
-            # print(this_status)
-            # print(potential)
-
-            our_progress = 0
-            their_progress = 0
-            if this_status != "Locked":
+            pixel_to_check = {
+                'current': img_array[pixel_current_height][959],
+                'left': {
+                    0: img_array[pixel_side_height][774],
+                    1: img_array[pixel_side_height][814]
+                },
+                'right': {
+                    0: img_array[pixel_side_height][1146],
+                    1: img_array[pixel_side_height][1106]
+                }
+            }
+            if this_status not in ["Locked", "Prepare"]:
                 this_side = self.team_from_pixel(pixel_to_check["current"])
-                print("Current Controller: " + this_side)
+                # print("Current Controller: " + this_side)
             for pixelIndex, thisPixel in pixel_to_check["left"].items():
                 team_result = self.team_from_pixel(thisPixel)
                 if team_result == "neither":
@@ -416,13 +455,17 @@ class MapInfo(GameObject):
                 if team_result == "neither":
                     their_progress = pixelIndex
                     break
-            if self.objectiveProgress["controlProgress"][1] != our_progress or self.objectiveProgress["controlProgress"][2] != their_progress:
+            if self.objectiveProgress["controlProgress"][1] != our_progress or \
+                    self.objectiveProgress["controlProgress"][2] != their_progress:
                 print("Game Progress | Us: " + str(our_progress) + "   Them: " + str(their_progress))
-            self.objectiveProgress["controlProgress"] = [this_status, our_progress, their_progress]
-        else:
-            self.identify_game_end(img_array, mode)
 
-        return new_image_array
+            this_status = this_status + status_addendum
+            if this_status != self.objectiveProgress["controlProgress"][0]:
+                print(this_status)
+            self.objectiveProgress["controlProgress"] = [this_status, our_progress, their_progress, this_side]
+            return True
+        else:
+            return False
 
     def identify_escort_objective_progress(self, img_array, map_type, mode="standard"):
         dimensions = {}
@@ -508,7 +551,7 @@ class MapInfo(GameObject):
 
             del self.objectiveProgress["escortProgress"][0]
 
-        print(self.objectiveProgress["escortProgress"])
+        print(str(self.objectiveProgress["escortProgress"]))
 
         if percent_complete == 0:
             self.identify_game_end(img_array, mode)
