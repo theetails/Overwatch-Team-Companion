@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import copy
 
 
 class Statistics:
@@ -16,9 +17,7 @@ class Statistics:
         )
 
         # calculate system_time -> best estimate
-        current_game_time = self.calculate_current_time()
-        # correct snapshots / delete snapshots between rounds
-        self.correct_snapshots(current_game_time)
+        self.calculate_current_time()
 
     def calculate_current_time(self):
         latest_snapshot = self.snapshots[-1]
@@ -62,11 +61,7 @@ class Statistics:
                                 (latest_snapshot.game_time["datetime"] - previous_verified_game_time).total_seconds())
                             print("Game Time Difference: " + str(game_time_difference))
                             if game_time_difference < 1.5:
-                                previous_round_game_time_difference = (
-                                    latest_snapshot.game_time["datetime"] - self.round_start_time[-1][
-                                        "game_time"]).total_seconds()
-                                # if previous_round_game_time_difference < 1:
-                                    # del self.round_start_time[-1]
+                                # TODO Remove?
                                 previous_verified_snapshot.game_time["verified"] = False
                             else:
                                 self.round_start_time.append({
@@ -105,7 +100,7 @@ class Statistics:
                 current_game_time = self.previous_time
             else:
                 current_game_time = datetime.min
-            # TODO keep looping previous game time
+                # TODO keep looping previous game time
         else:
             if len(self.round_start_time) == 0:
                 current_game_time = datetime.min
@@ -116,21 +111,80 @@ class Statistics:
                 self.previous_time = current_game_time
 
         print("Current Game Time: " + datetime.strftime(current_game_time, "%M:%S"))
-        return current_game_time
 
-    def correct_snapshots(self, current_game_time):
-        count = 0
-        for snapshot in reversed(self.snapshots):
-            if snapshot.game_time["verified"]:
-                break
-            elif snapshot.game_time["datetime"]:
-                count = count + 1
+    def correct_snapshots(self):
+        # TODO account for time prior to first recorded round_start_time
+        print("correct snapshots")
+        print(self.round_start_time)
+        round_start_time_length = len(self.round_start_time)
+        round_start_time_index = 1
+        snapshots = list(reversed(self.snapshots))
+        new_snapshots = []
+        print("Snapshot Length: " + str(len(snapshots)))
+        for number, snapshot in enumerate(snapshots):
+            print(number)
+            # print("Game Time: " + datetime.strftime(snapshot.game_time["datetime"], "%M:%S"))
+            # print("System Time: " + datetime.strftime(snapshot.system_time, "%m-%d-%y %H-%M-%S"))
+            loop_completed = False
+            while not loop_completed:
+                if round_start_time_index > round_start_time_length:
+                    print("1 Snapshot Length: " + str(len(snapshots)))
+                    loop_completed = True
+                    continue
+                current_round_times = self.round_start_time[-round_start_time_index]
+                if current_round_times["start_time"] < snapshot.system_time:
+                    print("Step 2")
+                    system_time_delta = snapshot.system_time - current_round_times["start_time"]
+                    game_time = current_round_times["game_time"] + system_time_delta
+                    new_snapshots.append((snapshots[number]))
+                    new_snapshots[-1].game_time["datetime"] = game_time
+                    loop_completed = True
+                    print(system_time_delta)
+                    print(game_time)
+                else:
+                    if round_start_time_index + 1 > round_start_time_length:
+                        print("3 Snapshot Length: " + str(len(snapshots)))
+                        loop_completed = True
+                        continue
+                    previous_round_times = self.round_start_time[-(round_start_time_index + 1)]
+                    previous_round_end_time = previous_round_times["start_time"] + timedelta(
+                        minutes=previous_round_times["game_time"].minute,
+                        seconds=previous_round_times["game_time"].second)
+                    if snapshot.system_time > previous_round_end_time:
+                        print("4 Snapshot Length: " + str(len(snapshots)))
+                        loop_completed = True
+                    else:
+                        round_start_time_index = round_start_time_index + 1
+                        print("Step 5")
+        self.snapshots = list(reversed(new_snapshots))
+
+        for number, snapshot in enumerate(new_snapshots):
+            print(number)
+            print("Game Time: " + datetime.strftime(snapshot.game_time["datetime"], "%M:%S"))
+            print("System Time: " + datetime.strftime(snapshot.system_time, "%m-%d-%y %H-%M-%S"))
 
     def submit_stats(self, game_end, current_time):
+
         if self.snapshots is not None:
             path = "Debug"
             current_time_string = datetime.strftime(current_time, "%m-%d-%y %H-%M-%S")
             debug_file = open(path + "\\Statistics " + current_time_string + ".txt", 'w')
+            for snapshot in self.snapshots:
+                snapshot_values = snapshot.output_all()
+                for snapshot_value in snapshot_values:
+                    line_to_write = str(snapshot_value) + '\n'
+                    debug_file.write(line_to_write)
+                debug_file.write('\n')
+            debug_file.write(game_end + '\n')
+            debug_file.write(current_time_string + '\n')
+
+        # correct snapshot times and objective progress, delete those from between rounds
+        self.correct_snapshots()
+
+        if self.snapshots is not None:
+            path = "Debug"
+            current_time_string = datetime.strftime(current_time, "%m-%d-%y %H-%M-%S")
+            debug_file = open(path + "\\Statistics Corrected " + current_time_string + ".txt", 'w')
             for snapshot in self.snapshots:
                 snapshot_values = snapshot.output_all()
                 for snapshot_value in snapshot_values:
