@@ -116,6 +116,13 @@ class Statistics:
         # TODO account for time prior to first recorded round_start_time
         print("correct snapshots")
         print(self.round_start_time)
+        if self.round_start_time[0]["game_time"].minute > 0 or self.round_start_time[0]["game_time"].second > 0:
+            zero_system_time = self.round_start_time[0]["start_time"] - timedelta(minutes=self.round_start_time[0]["game_time"].minute, seconds=self.round_start_time[0]["game_time"].second)
+            self.round_start_time[0] = {
+                "game_time": datetime.min,
+                "start_time": zero_system_time
+            }
+
         round_start_time_length = len(self.round_start_time)
         round_start_time_index = 1
         snapshots = list(reversed(self.snapshots))
