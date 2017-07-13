@@ -21,12 +21,14 @@ class Statistics:
 
     def calculate_current_time(self):
         latest_snapshot = self.snapshots[-1]
-        print("Round Start Time Array Length: " + str(len(self.round_start_time)))
+        # print("Round Start Time Array Length: " + str(len(self.round_start_time)))
 
         safe_to_adjust = False
         if "controlProgress" in latest_snapshot.objective_progress:
             if latest_snapshot.objective_progress["controlProgress"][0] not in [None, "Prepare"]:
                 safe_to_adjust = True
+        else:
+            safe_to_adjust = True
 
         if latest_snapshot.game_time["verified"] and safe_to_adjust:
             current_game_time = latest_snapshot.game_time["datetime"]
@@ -75,17 +77,18 @@ class Statistics:
                 })
         elif not safe_to_adjust:
             if self.previous_time is not None and not latest_snapshot.game_time["verified"]:
-                if self.snapshots[-2].objective_progress["controlProgress"][0] not in [None, "Prepare"]:
-                    current_game_time = self.previous_time
-                    game_time_delta = timedelta(minutes=self.previous_time.minute, seconds=self.previous_time.second)
-                    calculated_round_start_time = latest_snapshot.system_time - game_time_delta
-                    self.round_start_time.append({
-                        "start_time": calculated_round_start_time,
-                        "game_time": self.previous_time
-                    })
-                    self.temporary_round_start = True
-                else:
-                    current_game_time = self.previous_time
+                if "controlProgress" in self.snapshots[-2].objective_progress:
+                    if self.snapshots[-2].objective_progress["controlProgress"][0] not in [None, "Prepare"]:
+                        current_game_time = self.previous_time
+                        game_time_delta = timedelta(minutes=self.previous_time.minute, seconds=self.previous_time.second)
+                        calculated_round_start_time = latest_snapshot.system_time - game_time_delta
+                        self.round_start_time.append({
+                            "start_time": calculated_round_start_time,
+                            "game_time": self.previous_time
+                        })
+                        self.temporary_round_start = True
+                    else:
+                        current_game_time = self.previous_time
             elif latest_snapshot.game_time["verified"]:
                 self.previous_time = latest_snapshot.game_time["datetime"]
                 current_game_time = self.previous_time
@@ -165,13 +168,13 @@ class Statistics:
                         print("Step 5")
         self.snapshots = list(reversed(new_snapshots))
 
-        for number, snapshot in enumerate(new_snapshots):
-            print(number)
-            print("Game Time: " + datetime.strftime(snapshot.game_time["datetime"], "%M:%S"))
-            print("System Time: " + datetime.strftime(snapshot.system_time, "%m-%d-%y %H-%M-%S"))
+        # for number, snapshot in enumerate(new_snapshots):
+            # print(number)
+            # print("Game Time: " + datetime.strftime(snapshot.game_time["datetime"], "%M:%S"))
+            # print("System Time: " + datetime.strftime(snapshot.system_time, "%m-%d-%y %H-%M-%S"))
 
     def submit_stats(self, game_end, current_time):
-
+        '''
         if self.snapshots is not None:
             path = "Debug"
             current_time_string = datetime.strftime(current_time, "%m-%d-%y %H-%M-%S")
@@ -184,7 +187,7 @@ class Statistics:
                 debug_file.write('\n')
             debug_file.write(game_end + '\n')
             debug_file.write(current_time_string + '\n')
-
+        '''
         # correct snapshot times and objective progress, delete those from between rounds
         self.correct_snapshots()
 

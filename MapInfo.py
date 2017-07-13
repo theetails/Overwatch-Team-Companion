@@ -122,7 +122,10 @@ class MapInfo(GameObject):
             point_number = point_number + 1
 
     def map_type(self):
-        return self.mapDictionary[self.current_map[0]]
+        if self.current_map[0] is None:
+            return "assault"
+        else:
+            return self.mapDictionary[self.current_map[0]]
 
     def identify_map(self, screen_img_array, view):
         potential = None
@@ -706,10 +709,13 @@ class MapInfo(GameObject):
     def broadcast_options(self, broadcaster):
         map_type = self.map_type()
         if map_type == "transition":
-            if self.objectiveProgress["currentType"] is None:
-                map_type = "assault"
+            if "currentType" in self.objectiveProgress:
+                if self.objectiveProgress["currentType"] is None:
+                    map_type = "assault"
+                else:
+                    map_type = self.objectiveProgress["currentType"]
             else:
-                map_type = self.objectiveProgress["currentType"]
+                map_type = "assault"
         this_map = [
             self.currentMapSide,  # side options: offense, defense
             map_type,  # type options: escort, assault, control
