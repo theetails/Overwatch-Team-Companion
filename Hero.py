@@ -85,6 +85,8 @@ class Hero:
             return self.heroesReferenceDictionary[self.currentHero]
 
     def get_hero_name_from_number(self, hero_number):
+        if hero_number == "blank":
+            return None
         for referenceName, referenceNumber in self.heroesReferenceDictionary.items():
             if hero_number == referenceNumber:
                 return referenceName

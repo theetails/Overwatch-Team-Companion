@@ -72,25 +72,37 @@ class AppController(ApplicationSession):
     def create_hero_references(self):
         this_game_object = Game(self.debugMode)
 
-        reference_images_file = open('Reference\\HeroImageList.txt', 'w')
-        path = "Reference\\Image Sources"
-        reference_images = [image for image in listdir(path)]
-        for file in reference_images:
-            image_path = path + "/" + file
-            source_image = Image.open(image_path)
-            source_image_array = np.array(source_image)
-            threshold_image_array = this_game_object.heroes.threshold(source_image_array)
-            source_image_list = str(threshold_image_array.tolist())
-            line_to_write = file[:-4] + '::' + source_image_list + '\n'
-            reference_images_file.write(line_to_write)
+        reference_string = [
+            'Reference\\HeroImageList.txt',
+            'Reference\\HeroImageBlurList.txt',
+        ]
+        path = [
+            "Reference\\Hero Image Sources",
+            "Reference\\Hero Image Blur Sources"
+        ]
+
+        for x in range(1, len(reference_string)):
+            reference_images_file = open(reference_string[x], 'w')
+            reference_images = [image for image in listdir(path[x])]
+
+            for file in reference_images:
+                image_path = path[x] + "/" + file
+                source_image = Image.open(image_path)
+                source_image_array = np.array(source_image)
+                threshold_image_array = this_game_object.heroes.threshold(source_image_array)
+                source_image_list = str(threshold_image_array.tolist())
+                line_to_write = file[:-4] + '::' + source_image_list + '\n'
+                reference_images_file.write(line_to_write)
         print("Done")
 
     def create_images_for_hero_reference(self):
         this_game_object = Game(self.debugMode)
         screen_img_array = this_game_object.get_screen()
-        for heroNumber in range(1, 13):
+        current_view = this_game_object.map.main(screen_img_array, "for_reference")
+        hero_range = {"Hero Select": 7, "Tab": 13}
+        for heroNumber in range(1, hero_range[current_view]):
             hero = this_game_object.heroes.heroesDictionary[heroNumber]
-            this_game_object.heroes.identify_hero(screen_img_array, hero, "Tab")  # "Tab" or "Hero Select"
+            this_game_object.heroes.identify_hero(screen_img_array, hero, current_view)
             hero.save_debug_data("for_reference")
         print("Done")
 

@@ -13,6 +13,7 @@ class AllHeroes(GameObject):
     def __init__(self, debug_mode):
         self.debugMode = debug_mode
         self.characterReferences = self.read_references("Reference\\HeroImageList.txt")
+        self.characterBlurReferences = self.read_references("Reference\\HeroImageBlurList.txt")
         for x in range(1, 13):
             self.heroesDictionary[x] = Hero(x)
 
@@ -83,14 +84,46 @@ class AllHeroes(GameObject):
         # Make Black & White based off average value
         this_hero_img_threshold = self.threshold(np.asarray(this_hero_img))
         this_hero.set_image_array(this_hero_img)  # save IMG to Hero
-        potential = self.what_image_is_this(this_hero_img_threshold, self.characterReferences)  # compare to References
+
+        this_hero_references = {}
+        other_hero_references = {}
+
+        # 1) check if it is the same hero as previously
+        if this_hero.currentHero is not None:
+            for character, reference in self.characterReferences.items():
+                character_split = character.split("-")
+                if character_split[0] == this_hero.currentHero:
+                    this_hero_references[character] = reference
+                else:
+                    other_hero_references[character] = reference
+            result = self.get_hero_from_potential(this_hero, this_hero_img_threshold, this_hero_references)
+        else:
+            other_hero_references = self.characterReferences
+            result = False
+
+        # 2) check for blurred versions if on hero select and slot number is 1
+        if not result:
+            print("Step 2")
+            print(view)
+            print(this_hero.slotNumber)
+            if view == "Hero Select" and this_hero.slotNumber == 1:
+                result = self.get_hero_from_potential(this_hero, this_hero_img_threshold, self.characterBlurReferences)
+                print(this_hero.potential)
+        # 3) check standard array of heroes
+        if not result:
+            print("Step 3")
+            result = self.get_hero_from_potential(this_hero, this_hero_img_threshold, other_hero_references)
+        return result
+
+    def get_hero_from_potential(self, this_hero, image, character_references):
+        potential = self.what_image_is_this(image, character_references)  # compare to References
         this_hero.set_potential(potential)
         identified_hero = max(potential.keys(), key=(lambda k: potential[k]))
         if potential[identified_hero] > self.correctHeroThreshold:  # if enough pixels are the same
             this_hero_split = identified_hero.split("-")
             this_hero.set_hero(this_hero_split[0])
-            if this_hero.slotNumber == 1 and this_hero_split[0] == "searching":
-                # The player cannot be "searching", reduces errors
+            if this_hero.slotNumber == 1 and (this_hero_split[0] == "searching" or this_hero_split[0] == "unknown"):
+                # The player cannot be "searching" or "unknown", reduces errors
                 return False
             else:
                 return True

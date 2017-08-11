@@ -31,12 +31,6 @@ class Game:
             # sp.call('cls', shell=True)
             print(self.map.get_current_map())
             print(current_view)
-            if current_view == "Tab":
-                sleep_time = 0.5
-                self.map.identify_objective_progress(screen_img_array)
-                self.gameTime.main(screen_img_array, current_time)
-            elif current_view == "Hero Select":
-                sleep_time = 1
 
             # check if map or side changed
             map_changed = self.map.mapChange
@@ -59,6 +53,14 @@ class Game:
                 heroes_changed = self.heroes.check_for_change()
                 if heroes_changed:
                     self.heroes.broadcast_heroes(broadcaster)
+
+            if current_view == "Tab":
+                sleep_time = 0.5
+                self.map.identify_objective_progress(screen_img_array)
+                self.gameTime.main(screen_img_array, current_time)
+            elif current_view == "Hero Select":
+                sleep_time = 1
+
         else:
             sleep_time = 0.5
             if self.game_over is False:
