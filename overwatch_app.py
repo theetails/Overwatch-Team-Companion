@@ -81,7 +81,7 @@ class AppController(ApplicationSession):
             "Reference\\Hero Image Blur Sources"
         ]
 
-        for x in range(1, len(reference_string)):
+        for x in range(0, len(reference_string)-1):
             reference_images_file = open(reference_string[x], 'w')
             reference_images = [image for image in listdir(path[x])]
 
@@ -90,8 +90,9 @@ class AppController(ApplicationSession):
                 source_image = Image.open(image_path)
                 source_image_array = np.array(source_image)
                 threshold_image_array = this_game_object.heroes.threshold(source_image_array)
-                source_image_list = str(threshold_image_array.tolist())
-                line_to_write = file[:-4] + '::' + source_image_list + '\n'
+                source_image_list = threshold_image_array.tolist()
+                condensed_source_image_list = condense_image(source_image_list)
+                line_to_write = file[:-4] + '::' + str(condensed_source_image_list) + '\n'
                 reference_images_file.write(line_to_write)
         print("Done")
 
@@ -158,10 +159,23 @@ class AppController(ApplicationSession):
                 source_image = Image.open(image_path)
                 source_image_array = np.array(source_image)
                 # threshold_image_array = this_game_object.map.threshold(source_image_array)
-                source_image_list = str(source_image_array.tolist())
-                line_to_write = file[:-4] + '::' + source_image_list + '\n'
+                source_image_list = source_image_array.tolist()
+                condensed_source_image_list = condense_image(source_image_list)
+                line_to_write = file[:-4] + '::' + str(condensed_source_image_list) + '\n'
                 reference_images_file.write(line_to_write)
         print("Done")
+
+    @staticmethod
+    def condense_image(image_list):
+        new_image_list = []
+        print(type(image_list))
+        for row in image_list:
+            new_image_list.append([])
+            for pixel in row:
+                new_image_list[-1].append(pixel[0])
+                # print(pixel[0])
+        print(new_image_list)
+        return new_image_list
 
     # @staticmethod
     # def unit_test_references():  # needs reworked
@@ -207,10 +221,21 @@ def create_digit_references():
             source_image = Image.open(image_path)
             source_image_array = np.array(source_image)
             # threshold_image_array = this_game_object.game_datetime.threshold(source_image_array)
-            source_image_list = str(source_image_array.tolist())
-            line_to_write = file[:-4] + '::' + source_image_list + '\n'
+            source_image_list = source_image_array.tolist()
+            condensed_source_image_list = condense_image(source_image_list)
+            line_to_write = file[:-4] + '::' + str(condensed_source_image_list) + '\n'
             reference_images_file.write(line_to_write)
     print("Done")
+
+
+def condense_image(image_list):
+    new_image_list = []
+    for row in image_list:
+        new_image_list.append([])
+        for pixel in row:
+            new_image_list[-1].append(pixel[0])
+            # print(pixel[0])
+    return new_image_list
 
 
 main_function()
@@ -233,11 +258,9 @@ overwatch_app.py
         Keep track of progress
         Add Capture the Flag
     Keep track of Game Time
-    Optimize Storage of Images (only one number per pixel instead of three identical numbers)
-    Optimize Image Search (Search last hero first)
     Login System
     Detect Screen Resolution - Currently only 1080p
     Detect Screen Color Differences
     Streaming Integration
-    GUI
+    GUI - Website instead of Tkinter?
 '''

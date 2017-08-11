@@ -103,15 +103,10 @@ class AllHeroes(GameObject):
 
         # 2) check for blurred versions if on hero select and slot number is 1
         if not result:
-            print("Step 2")
-            print(view)
-            print(this_hero.slotNumber)
             if view == "Hero Select" and this_hero.slotNumber == 1:
                 result = self.get_hero_from_potential(this_hero, this_hero_img_threshold, self.characterBlurReferences)
-                print(this_hero.potential)
         # 3) check standard array of heroes
         if not result:
-            print("Step 3")
             result = self.get_hero_from_potential(this_hero, this_hero_img_threshold, other_hero_references)
         return result
 
