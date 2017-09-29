@@ -18,9 +18,9 @@ class MapInfo(GameObject):
         # control
         "ilios": "control", "lijiang": "control", "nepal": "control", "oasis": "control",
         # escort
-        "dorado": "escort", "route66": "escort", "watchpoint gibraltar": "escort",
+        "dorado": "escort", "junkertown": "escort", "route66": "escort", "watchpoint gibraltar": "escort",
         # arena
-        "black forest": "arena", "castillo": "arena", "ecopoint antarctica": "arena", "ilios lighthouse": "arena",
+        "black forest": "arena", "castillo": "arena", "chateau guillard": "arena", "ecopoint antarctica": "arena", "ilios lighthouse": "arena",
         "ilios ruins": "arena", "ilios well": "arena", "lijiang control center": "arena", "lijiang garden": "arena",
         "lijiang night market": "arena", "necropolis": "arena", "nepal sanctum": "arena", "nepal shrine": "arena",
         "nepal village": "arena", "oasis city center": "arena", "oasis gardens": "arena", "oasis university": "arena"
@@ -47,10 +47,11 @@ class MapInfo(GameObject):
         "Defeat": 5800
     }
 
-    def __init__(self, debug_mode):
+    def __init__(self, game_version, debug_mode):
         self.objectiveProgress = {}
         self.assaultPixelsToCheck = []
 
+        self.game_version = game_version
         self.debugMode = debug_mode
         self.mapReferences = {
             "Hero Select": self.read_references("Reference\\MapImageList.txt"),
@@ -131,7 +132,6 @@ class MapInfo(GameObject):
         potential = None
 
         this_map_array = self.get_map(screen_img_array, view)
-
         potential = self.what_image_is_this(this_map_array, self.mapReferences[view])
         this_map = max(potential.keys(), key=(lambda k: potential[k]))
         self.previousImageArray = self.currentImageArray
@@ -203,10 +203,10 @@ class MapInfo(GameObject):
             start_y = 168
             end_y = 206
         elif mode == "Tab":
-            start_x = 105
-            end_x = 240
-            start_y = 49
-            end_y = 62
+            start_x = 65
+            end_x = 220
+            start_y = 34
+            end_y = 47
         map_image = img_array[start_y:end_y, start_x:end_x]
         map_image_array = np.asarray(map_image)
 
@@ -250,7 +250,8 @@ class MapInfo(GameObject):
             this_side = "defense"
         else:
             this_side = "neither"
-        # print("rgb: " + str(red) + "," + str(green) + "," + str(blue))
+            # print("Neither")
+            # print("rgb: " + str(red) + "," + str(green) + "," + str(blue))
         return this_side
 
     def identify_objective_progress(self, img_array, mode="standard"):
@@ -554,7 +555,7 @@ class MapInfo(GameObject):
 
             del self.objectiveProgress["escortProgress"][0]
 
-        print(str(self.objectiveProgress["escortProgress"]))
+        # print(str(self.objectiveProgress["escortProgress"]))
 
         if percent_complete == 0:
             self.identify_game_end(img_array, mode)
@@ -562,6 +563,7 @@ class MapInfo(GameObject):
         return new_image_array
 
     def identify_game_end(self, img_array, mode="standard"):
+        print("Identify Game End")
         dimensions = {
             'start_x': 643,
             'end_x': 1305,
@@ -690,8 +692,8 @@ class MapInfo(GameObject):
         img = Image.fromarray(new_cropped_image_array)
         scaled_image_array = self.threshold(np.asarray((img.resize((160, 45), Image.BILINEAR))))
         scaled_image = Image.fromarray(scaled_image_array)
-
-        if len(scaled_image_array[0]) * len(scaled_image_array) != len(self.gameEndReference["Victory"][0]):
+        if len(scaled_image_array[0]) != len(self.gameEndReference["Victory"][0]) and \
+                len(scaled_image_array) != len(self.gameEndReference["Victory"]):
             return False
         else:
             return scaled_image

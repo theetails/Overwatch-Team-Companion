@@ -11,12 +11,13 @@ from TimeInfo import TimeInfo
 
 
 class Game:
-    def __init__(self, debug_mode):
+    def __init__(self, game_version, debug_mode):
+        self.game_version = game_version
         self.debugMode = debug_mode
-        self.heroes = AllHeroes(debug_mode)
-        self.map = MapInfo(debug_mode)
+        self.heroes = AllHeroes(game_version, debug_mode)
+        self.map = MapInfo(game_version, debug_mode)
         self.statistics = None
-        self.gameTime = TimeInfo(debug_mode)
+        self.gameTime = TimeInfo(game_version, debug_mode)
         self.game_over = True
 
     def main(self, broadcaster):
@@ -57,7 +58,7 @@ class Game:
             if current_view == "Tab":
                 sleep_time = 0.5
                 self.map.identify_objective_progress(screen_img_array)
-                self.gameTime.main(screen_img_array, current_time)
+                self.gameTime.main(screen_img_array, current_time_string)
             elif current_view == "Hero Select":
                 sleep_time = 1
 

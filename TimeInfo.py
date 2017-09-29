@@ -6,16 +6,17 @@ from GameObject import GameObject
 
 
 class TimeInfo(GameObject):
-    def __init__(self, debug_mode):
-        self.debugMode = debug_mode
+    def __init__(self, game_version, debug_mode):
+        self.game_version = game_version
+        self.debug_mode = debug_mode
 
         self.digitReferences = self.read_references("Reference\\DigitImageList.txt")
         self.colonReference = self.read_references("Reference\\ColonImageList.txt")
         self.digitDimensions = {
-            "start_x": 154,
-            "end_x": 162,
-            "start_y": 73,
-            "end_y": 85
+            "start_x": 106,
+            "end_x": 114,
+            "start_y": 59,
+            "end_y": 71
         }
         self.game_datetime = datetime.min
         self.roundStartTime = None
@@ -25,8 +26,8 @@ class TimeInfo(GameObject):
         self.game_datetime = datetime.min
         self.roundStartTime = None
 
-    def main(self, screen_image_array, computer_time):
-        self.identify_time(screen_image_array, computer_time)
+    def main(self, screen_image_array, computer_time_string):
+        self.identify_time(screen_image_array, computer_time_string)
         return True
 
     def identify_time(self, img_array, system_time):
@@ -49,14 +50,15 @@ class TimeInfo(GameObject):
                 potential = self.what_image_is_this(this_digit_array, self.colonReference)
                 # print("Colon?")
                 # print(potential)
-                if potential["colon"] > colon_requirement:
+                this_colon = max(potential.keys(), key=(lambda k: potential[k]))
+                if potential[this_colon] > colon_requirement:
                     # print("Colon!")
                     time_string = time_string + ":"
                     colon_found = True
                     dimensions["start_x"] = dimensions["start_x"] + 4
                     dimensions["end_x"] = dimensions["end_x"] + 4
-                    if self.debugMode:
-                        self.save_debug_data(this_digit_array, loop_count)
+                    if self.debug_mode:
+                        self.save_debug_data(this_digit_array, loop_count, system_time)
                     loop_count = loop_count + 1
                     continue
                 # print("Not Colon")
@@ -75,16 +77,16 @@ class TimeInfo(GameObject):
                 else:
                     this_digit = "8"
 
-            # print (this_digit)
-            # print (potential)
+            # print(this_digit)
+            # print(potential)
             time_string = time_string + str(this_digit)
 
             if colon_found:
                 digits_after_colon = digits_after_colon + 1
             else:
                 digits_before_colon = digits_before_colon + 1
-            if self.debugMode:
-                self.save_debug_data(this_digit_array, loop_count)
+            if self.debug_mode:
+                self.save_debug_data(this_digit_array, loop_count, system_time)
             if digits_after_colon == 2:
                 break
             dimensions["start_x"] = dimensions["start_x"] + 9
@@ -149,12 +151,15 @@ class TimeInfo(GameObject):
         return time_dictionary
 
     @staticmethod
-    def save_debug_data(img_array, loop_count):
+    def save_debug_data(img_array, loop_count, system_time):
+        return
+        # TODO Update save_debug_data
+
         path = "Debug"
 
         # save image
         img = Image.fromarray(img_array)
-        img.save(path + "\\Digit " + str(loop_count) + ".png", "PNG")
+        img.save(path + "\\Digit " + system_time + " " + str(loop_count) + ".png", "PNG")
         '''
         if (currentTime != "for_reference"):
             #save potential

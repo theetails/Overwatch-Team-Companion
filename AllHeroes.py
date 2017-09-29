@@ -10,7 +10,8 @@ class AllHeroes(GameObject):
     heroesDictionary = {}
     heroesList = []
 
-    def __init__(self, debug_mode):
+    def __init__(self, game_version, debug_mode):
+        self.game_version = game_version
         self.debugMode = debug_mode
         self.characterReferences = self.read_references("Reference\\HeroImageList.txt")
         self.characterBlurReferences = self.read_references("Reference\\HeroImageBlurList.txt")

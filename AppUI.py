@@ -8,7 +8,7 @@ class AppUI(tkinter.Tk):
         super().__init__()
         self.protocol("WM_DELETE_WINDOW", self.close)
         self.width = 300
-        self.height = 240
+        self.height = 250
         self.currentGroupID = None
         self.geometry('{}x{}'.format(self.width, self.height))
         self.loop = loop
@@ -27,18 +27,29 @@ class AppUI(tkinter.Tk):
         self.mainMenuWindow = tkinter.Frame(self, width=self.width, height=self.height)
         self.mainMenuWindow.pack(fill="both", expand=True, padx=20, pady=20)
         tkinter.Button(self.mainMenuWindow, text="Start Game Watcher", command=self.get_group_id).pack(fill="x")
-        tkinter.Button(self.mainMenuWindow, text="Hero Reference: Create Images",
+        tkinter.Button(self.mainMenuWindow, text="Developer Tools", command=self.open_developer_tools).pack(fill="x")
+
+    def open_developer_tools(self):
+        self.mainMenuWindow.destroy()
+        self.title("Developer Tools")
+        developer_tools_window = tkinter.Frame(self, width=self.width, height=self.height)
+        developer_tools_window.pack(fill="both", expand=True, padx=20, pady=20)
+        tkinter.Button(developer_tools_window, text="Hero Reference: Create Images",
                        command=self.create_hero_images).pack(fill="x")
-        tkinter.Button(self.mainMenuWindow, text="Hero Reference: Create TXT",
+        tkinter.Button(developer_tools_window, text="Hero Reference: Create TXT",
                        command=self.create_hero_reference).pack(fill="x")
-        tkinter.Button(self.mainMenuWindow, text="Map Reference -Hero Select: Create Image",
+        tkinter.Button(developer_tools_window, text="Map Reference -Hero Select: Create Image",
                        command=self.create_map_image_hero_select).pack(fill="x")
-        tkinter.Button(self.mainMenuWindow, text="Map Reference -Tab: Create Image",
+        tkinter.Button(developer_tools_window, text="Map Reference -Tab: Create Image",
                        command=self.create_map_image_tab).pack(fill="x")
-        tkinter.Button(self.mainMenuWindow, text="Map Reference -Objectives: Create Image",
+        tkinter.Button(developer_tools_window, text="Map Reference -Objectives: Create Image",
                        command=self.create_map_image_objective).pack(fill="x")
-        tkinter.Button(self.mainMenuWindow, text="Map Reference: Create TXT",
+        tkinter.Button(developer_tools_window, text="Map Reference: Create TXT",
                        command=self.create_map_reference).pack(fill="x")
+        tkinter.Button(developer_tools_window, text="Digit Reference: Create Images",
+                       command=self.create_digit_images).pack(fill="x")
+        tkinter.Button(developer_tools_window, text="Digit Reference: Create TXT",
+                       command=self.create_digit_references).pack(fill="x")
 
     def get_group_id(self):
         self.mainMenuWindow.destroy()
@@ -108,6 +119,12 @@ class AppUI(tkinter.Tk):
 
     def create_map_reference(self):
         self.thisAppController.create_map_references()
+
+    def create_digit_images(self):
+        self.thisAppController.create_digit_images()
+
+    def create_digit_references(self):
+        self.thisAppController.create_digit_references()
 
     def updater(self, interval):
         self.update()

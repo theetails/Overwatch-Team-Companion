@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
-import copy
+import json
+# import copy
 
 
 class Statistics:
@@ -20,6 +21,7 @@ class Statistics:
         self.calculate_current_time()
 
     def calculate_current_time(self):
+        current_game_time = datetime.min
         latest_snapshot = self.snapshots[-1]
         # print("Round Start Time Array Length: " + str(len(self.round_start_time)))
 
@@ -80,7 +82,9 @@ class Statistics:
                 if "controlProgress" in self.snapshots[-2].objective_progress:
                     if self.snapshots[-2].objective_progress["controlProgress"][0] not in [None, "Prepare"]:
                         current_game_time = self.previous_time
-                        game_time_delta = timedelta(minutes=self.previous_time.minute, seconds=self.previous_time.second)
+                        game_time_delta = timedelta(
+                            minutes=self.previous_time.minute,
+                            seconds=self.previous_time.second)
                         calculated_round_start_time = latest_snapshot.system_time - game_time_delta
                         self.round_start_time.append({
                             "start_time": calculated_round_start_time,
@@ -94,10 +98,16 @@ class Statistics:
                 current_game_time = self.previous_time
                 game_time_delta = timedelta(minutes=current_game_time.minute, seconds=current_game_time.second)
                 calculated_round_start_time = latest_snapshot.system_time - game_time_delta
-                self.round_start_time[-1] = {
-                    "start_time": calculated_round_start_time,
-                    "game_time": current_game_time
-                }
+                if len(self.round_start_time) == 0:
+                    self.round_start_time[0] = {
+                        "start_time": calculated_round_start_time,
+                        "game_time": current_game_time
+                    }
+                else:
+                    self.round_start_time[-1] = {
+                        "start_time": calculated_round_start_time,
+                        "game_time": current_game_time
+                    }
                 self.temporary_round_start = True
             elif self.previous_time is not None:
                 current_game_time = self.previous_time
@@ -120,7 +130,9 @@ class Statistics:
         print("correct snapshots")
         print(self.round_start_time)
         if self.round_start_time[0]["game_time"].minute > 0 or self.round_start_time[0]["game_time"].second > 0:
-            zero_system_time = self.round_start_time[0]["start_time"] - timedelta(minutes=self.round_start_time[0]["game_time"].minute, seconds=self.round_start_time[0]["game_time"].second)
+            zero_system_time = self.round_start_time[0]["start_time"] \
+                               - timedelta(minutes=self.round_start_time[0]["game_time"].minute,
+                                           seconds=self.round_start_time[0]["game_time"].second)
             self.round_start_time[0] = {
                 "game_time": datetime.min,
                 "start_time": zero_system_time
@@ -132,40 +144,43 @@ class Statistics:
         new_snapshots = []
         print("Snapshot Length: " + str(len(snapshots)))
         for number, snapshot in enumerate(snapshots):
-            print(number)
+            # print(number)
             # print("Game Time: " + datetime.strftime(snapshot.game_time["datetime"], "%M:%S"))
             # print("System Time: " + datetime.strftime(snapshot.system_time, "%m-%d-%y %H-%M-%S"))
             loop_completed = False
             while not loop_completed:
                 if round_start_time_index > round_start_time_length:
-                    print("1 Snapshot Length: " + str(len(snapshots)))
+                    print("Step 1: prevent index beyond length")
                     loop_completed = True
                     continue
                 current_round_times = self.round_start_time[-round_start_time_index]
                 if current_round_times["start_time"] < snapshot.system_time:
-                    print("Step 2")
+                    print("Step 2: Correct Time Sync")
                     system_time_delta = snapshot.system_time - current_round_times["start_time"]
-                    game_time = current_round_times["game_time"] + system_time_delta
+                    game_time_delta = system_time_delta - timedelta(
+                        minutes=current_round_times["game_time"].minute,
+                        seconds=current_round_times["game_time"].second)
+                    game_time = current_round_times["game_time"] + game_time_delta
                     new_snapshots.append((snapshots[number]))
                     new_snapshots[-1].game_time["datetime"] = game_time
                     loop_completed = True
                     print(system_time_delta)
                     print(game_time)
+                    continue
+                if round_start_time_index + 1 > round_start_time_length:
+                    print("Step 3: prevent index of next round_start_time beyond length")
+                    loop_completed = True
+                    continue
+                previous_round_times = self.round_start_time[-(round_start_time_index + 1)]
+                previous_round_end_time = previous_round_times["start_time"] + timedelta(
+                    minutes=previous_round_times["game_time"].minute,
+                    seconds=previous_round_times["game_time"].second)
+                if snapshot.system_time > previous_round_end_time:
+                    print("Step 4: before round started")
+                    loop_completed = True
                 else:
-                    if round_start_time_index + 1 > round_start_time_length:
-                        print("3 Snapshot Length: " + str(len(snapshots)))
-                        loop_completed = True
-                        continue
-                    previous_round_times = self.round_start_time[-(round_start_time_index + 1)]
-                    previous_round_end_time = previous_round_times["start_time"] + timedelta(
-                        minutes=previous_round_times["game_time"].minute,
-                        seconds=previous_round_times["game_time"].second)
-                    if snapshot.system_time > previous_round_end_time:
-                        print("4 Snapshot Length: " + str(len(snapshots)))
-                        loop_completed = True
-                    else:
-                        round_start_time_index = round_start_time_index + 1
-                        print("Step 5")
+                    round_start_time_index = round_start_time_index + 1
+                    print("Step 5: next round_start_time")
         self.snapshots = list(reversed(new_snapshots))
 
         # for number, snapshot in enumerate(new_snapshots):
@@ -174,7 +189,7 @@ class Statistics:
             # print("System Time: " + datetime.strftime(snapshot.system_time, "%m-%d-%y %H-%M-%S"))
 
     def submit_stats(self, game_end, current_time):
-        '''
+        """
         if self.snapshots is not None:
             path = "Debug"
             current_time_string = datetime.strftime(current_time, "%m-%d-%y %H-%M-%S")
@@ -187,8 +202,9 @@ class Statistics:
                 debug_file.write('\n')
             debug_file.write(game_end + '\n')
             debug_file.write(current_time_string + '\n')
-        '''
+        """
         # correct snapshot times and objective progress, delete those from between rounds
+        self.save_shapshots_for_debugging()
         self.correct_snapshots()
 
         if self.snapshots is not None:
@@ -203,6 +219,13 @@ class Statistics:
                 debug_file.write('\n')
             debug_file.write(game_end + '\n')
             debug_file.write(current_time_string + '\n')
+
+    def save_shapshots_for_debugging(self):
+        snapshot_output_list = []
+        for snapshot in self.snapshots:
+            snapshot_output_list.append(snapshot.output_all())
+        with open("Debug\\Snapshot.txt", 'w') as file:
+            json.dump(snapshot_output_list, file)
 
 
 class SnapShot:

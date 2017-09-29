@@ -24,6 +24,7 @@ class AppController(ApplicationSession):
 
         # Set debugMode to True if you want to save images in debug folder
         self.debugMode = True
+        self.game_version = "1.16"  # PTR or Live
 
         self.this_map = "oasis"
         self.this_side = "offense"
@@ -57,7 +58,7 @@ class AppController(ApplicationSession):
                 self.gameObject.heroes.change_heroes(msg2)
 
         self.subscription = await self.subscribe(on_event, self.subscriptionString)
-        self.gameObject = Game(self.debugMode)
+        self.gameObject = Game(self.game_version, self.debugMode)
         self.publish(self.subscriptionString, "Hello")
         await asyncio.sleep(.5)
         while True:
@@ -70,7 +71,7 @@ class AppController(ApplicationSession):
 
     # supplementary functions
     def create_hero_references(self):
-        this_game_object = Game(self.debugMode)
+        this_game_object = Game(self.game_version, self.debugMode)
 
         reference_string = [
             'Reference\\HeroImageList.txt',
@@ -81,7 +82,7 @@ class AppController(ApplicationSession):
             "Reference\\Hero Image Blur Sources"
         ]
 
-        for x in range(0, len(reference_string)-1):
+        for x in range(0, len(reference_string)):
             reference_images_file = open(reference_string[x], 'w')
             reference_images = [image for image in listdir(path[x])]
 
@@ -91,13 +92,13 @@ class AppController(ApplicationSession):
                 source_image_array = np.array(source_image)
                 threshold_image_array = this_game_object.heroes.threshold(source_image_array)
                 source_image_list = threshold_image_array.tolist()
-                condensed_source_image_list = condense_image(source_image_list)
+                condensed_source_image_list = self.condense_image(source_image_list)
                 line_to_write = file[:-4] + '::' + str(condensed_source_image_list) + '\n'
                 reference_images_file.write(line_to_write)
         print("Done")
 
     def create_images_for_hero_reference(self):
-        this_game_object = Game(self.debugMode)
+        this_game_object = Game(self.game_version, self.debugMode)
         screen_img_array = this_game_object.get_screen()
         current_view = this_game_object.map.main(screen_img_array, "for_reference")
         hero_range = {"Hero Select": 7, "Tab": 13}
@@ -108,7 +109,7 @@ class AppController(ApplicationSession):
         print("Done")
 
     def create_images_for_map_reference_hero_select(self):
-        this_game_object = Game(self.debugMode)
+        this_game_object = Game(self.game_version, self.debugMode)
         screen_img_array = this_game_object.get_screen()
         this_game_object.map.currentImageArray = this_game_object.map.get_map(
             screen_img_array, "Hero Select", lijiang=False)  # , threshold_balance=True)
@@ -116,14 +117,14 @@ class AppController(ApplicationSession):
         print("Done")
 
     def create_images_for_map_reference_tab(self):
-        this_game_object = Game(self.debugMode)
+        this_game_object = Game(self.game_version, self.debugMode)
         screen_img_array = this_game_object.get_screen()
         this_game_object.map.currentImageArray = this_game_object.map.get_map(screen_img_array, "Tab", lijiang=False)
         this_game_object.map.save_debug_data("for_reference")
         print("Done")
 
     def create_images_for_map_reference_objective(self):
-        this_game_object = Game(self.debugMode)
+        this_game_object = Game(self.game_version, self.debugMode)
         screen_img_array = this_game_object.get_screen()
         this_game_object.map.current_map[0] = self.this_map
         this_game_object.map.currentMapSide = self.this_side
@@ -131,8 +132,7 @@ class AppController(ApplicationSession):
         this_game_object.map.identify_objective_progress(screen_img_array, "for_reference")
         print("Done")
 
-    @staticmethod
-    def create_map_references():
+    def create_map_references(self):
 
         reference_string = [
             'Reference\\MapImageList.txt',
@@ -151,7 +151,7 @@ class AppController(ApplicationSession):
             "Reference\\Objective-Assault Sources",
             "Reference\\Objective-Control Sources",
             "Reference\\Game End Sources"]
-        for x in range(0, 6):
+        for x in range(0, len(reference_string)):
             reference_images_file = open(reference_string[x], 'w')
             reference_images = [image for image in listdir(path[x])]
             for file in reference_images:
@@ -160,7 +160,31 @@ class AppController(ApplicationSession):
                 source_image_array = np.array(source_image)
                 # threshold_image_array = this_game_object.map.threshold(source_image_array)
                 source_image_list = source_image_array.tolist()
-                condensed_source_image_list = condense_image(source_image_list)
+                condensed_source_image_list = self.condense_image(source_image_list)
+                line_to_write = file[:-4] + '::' + str(condensed_source_image_list) + '\n'
+                reference_images_file.write(line_to_write)
+        print("Done")
+
+    def create_digit_images(self):
+        sp.call('cls', shell=True)
+        this_game_object = Game(self.game_version, self.debugMode)
+        screen_img_array = this_game_object.get_screen()
+        this_game_object.gameTime.main(screen_img_array, "reference")
+        print("Done")
+
+    def create_digit_references(self):
+        reference_string = ['Reference\\DigitImageList.txt', 'Reference\\ColonImageList.txt']
+        path = ["Reference\\Digit Sources", "Reference\\Digit Colon Source"]
+        for x in range(0, 2):
+            reference_images_file = open(reference_string[x], 'w')
+            reference_images = [image for image in listdir(path[x])]
+            for file in reference_images:
+                image_path = path[x] + "/" + file
+                source_image = Image.open(image_path)
+                source_image_array = np.array(source_image)
+                # threshold_image_array = this_game_object.game_datetime.threshold(source_image_array)
+                source_image_list = source_image_array.tolist()
+                condensed_source_image_list = self.condense_image(source_image_list)
                 line_to_write = file[:-4] + '::' + str(condensed_source_image_list) + '\n'
                 reference_images_file.write(line_to_write)
         print("Done")
@@ -168,13 +192,10 @@ class AppController(ApplicationSession):
     @staticmethod
     def condense_image(image_list):
         new_image_list = []
-        print(type(image_list))
         for row in image_list:
             new_image_list.append([])
             for pixel in row:
                 new_image_list[-1].append(pixel[0])
-                # print(pixel[0])
-        print(new_image_list)
         return new_image_list
 
     # @staticmethod
@@ -202,45 +223,7 @@ def main_function():
     runner.run(AppController)
 
 
-def create_digit_image():
-    sp.call('cls', shell=True)
-    this_game_object = Game(False)
-    screen_img_array = this_game_object.get_screen()
-    this_game_object.gameTime.main(screen_img_array)
-    print("Done")
-
-
-def create_digit_references():
-    reference_string = ['Reference\\DigitImageList.txt', 'Reference\\ColonImageList.txt']
-    path = ["Reference\\Digit Sources", "Reference\\Digit Colon Source"]
-    for x in range(0, 2):
-        reference_images_file = open(reference_string[x], 'w')
-        reference_images = [image for image in listdir(path[x])]
-        for file in reference_images:
-            image_path = path[x] + "/" + file
-            source_image = Image.open(image_path)
-            source_image_array = np.array(source_image)
-            # threshold_image_array = this_game_object.game_datetime.threshold(source_image_array)
-            source_image_list = source_image_array.tolist()
-            condensed_source_image_list = condense_image(source_image_list)
-            line_to_write = file[:-4] + '::' + str(condensed_source_image_list) + '\n'
-            reference_images_file.write(line_to_write)
-    print("Done")
-
-
-def condense_image(image_list):
-    new_image_list = []
-    for row in image_list:
-        new_image_list.append([])
-        for pixel in row:
-            new_image_list[-1].append(pixel[0])
-            # print(pixel[0])
-    return new_image_list
-
-
 main_function()
-# create_digit_image()
-# create_digit_references()
 
 # TODO List
 '''
