@@ -6,15 +6,14 @@ from Hero import Hero
 
 
 class AllHeroes(GameObject):
-    correctHeroThreshold = 2850
-    heroesDictionary = {}
-    heroesList = []
 
     def __init__(self, game_version, debug_mode):
         self.game_version = game_version
         self.debugMode = debug_mode
         self.characterReferences = self.read_references("Reference\\HeroImageList.txt")
         self.characterBlurReferences = self.read_references("Reference\\HeroImageBlurList.txt")
+        self.heroesDictionary = {}
+        self.heroesList = []
         for x in range(1, 13):
             self.heroesDictionary[x] = Hero(x)
 
@@ -105,17 +104,18 @@ class AllHeroes(GameObject):
         # 2) check for blurred versions if on hero select and slot number is 1
         if not result:
             if view == "Hero Select" and this_hero.slotNumber == 1:
-                result = self.get_hero_from_potential(this_hero, this_hero_img_threshold, self.characterBlurReferences)
+                result = self.get_hero_from_potential(
+                    this_hero, this_hero_img_threshold, self.characterBlurReferences, correct_hero_threshold=2700)
         # 3) check standard array of heroes
         if not result:
             result = self.get_hero_from_potential(this_hero, this_hero_img_threshold, other_hero_references)
         return result
 
-    def get_hero_from_potential(self, this_hero, image, character_references):
+    def get_hero_from_potential(self, this_hero, image, character_references, correct_hero_threshold=2850):
         potential = self.what_image_is_this(image, character_references)  # compare to References
         this_hero.set_potential(potential)
         identified_hero = max(potential.keys(), key=(lambda k: potential[k]))
-        if potential[identified_hero] > self.correctHeroThreshold:  # if enough pixels are the same
+        if potential[identified_hero] > correct_hero_threshold:  # if enough pixels are the same
             this_hero_split = identified_hero.split("-")
             this_hero.set_hero(this_hero_split[0])
             if this_hero.slotNumber == 1 and (this_hero_split[0] == "searching" or this_hero_split[0] == "unknown"):
