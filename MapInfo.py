@@ -20,10 +20,11 @@ class MapInfo(GameObject):
         # escort
         "dorado": "escort", "junkertown": "escort", "route66": "escort", "watchpoint gibraltar": "escort",
         # arena
-        "black forest": "arena", "castillo": "arena", "chateau guillard": "arena", "ecopoint antarctica": "arena", "ilios lighthouse": "arena",
-        "ilios ruins": "arena", "ilios well": "arena", "lijiang control center": "arena", "lijiang garden": "arena",
-        "lijiang night market": "arena", "necropolis": "arena", "nepal sanctum": "arena", "nepal shrine": "arena",
-        "nepal village": "arena", "oasis city center": "arena", "oasis gardens": "arena", "oasis university": "arena"
+        "black forest": "arena", "castillo": "arena", "chateau guillard": "arena", "ecopoint antarctica": "arena",
+        "ilios lighthouse": "arena", "ilios ruins": "arena", "ilios well": "arena", "lijiang control center": "arena",
+        "lijiang garden": "arena", "lijiang night market": "arena", "necropolis": "arena", "nepal sanctum": "arena",
+        "nepal shrine": "arena", "nepal village": "arena", "oasis city center": "arena", "oasis gardens": "arena",
+        "oasis university": "arena"
     }
     current_map = [None]
     currentMapSide = "offense"
@@ -40,7 +41,7 @@ class MapInfo(GameObject):
 
     imageThreshold = {
         "Hero Select": 1875,
-        "Tab": 1700,
+        "Tab": 1850,  # was 1710
         "Assault": 135,
         "Control": 270,  # max 384, lower limit: 250
         "Victory": 6500,
@@ -48,6 +49,7 @@ class MapInfo(GameObject):
     }
 
     def __init__(self, game_version, debug_mode):
+        self.competitive = True;
         self.objectiveProgress = {}
         self.assaultPixelsToCheck = []
 
@@ -65,6 +67,8 @@ class MapInfo(GameObject):
         self.gameEndReference = self.read_references("Reference\\GameEnd.txt")
 
         self.calculate_assault_progress_pixels()
+
+        self.dimensions = self.dimensions_from_version()
 
     def main(self, screen_image_array, current_time):
         # check if Tab View
@@ -140,6 +144,7 @@ class MapInfo(GameObject):
         self.potential = potential
         self.thisMapPotential = potential[this_map]
         if potential[this_map] > self.imageThreshold[view]:
+            print(str(potential[this_map]) + " " + this_map)
             if this_map == "lijiang tower" and view == "Hero Select":
                 this_map_lijiang = self.get_map(screen_img_array, "Hero Select", lijiang=True)
                 potential = self.what_image_is_this(this_map_lijiang, self.mapReferences["Lijiang"])
@@ -254,6 +259,31 @@ class MapInfo(GameObject):
             # print("rgb: " + str(red) + "," + str(green) + "," + str(blue))
         return this_side
 
+    @staticmethod
+    def team_from_pixel_precise(pixel_to_check, opposite=False):
+        red = pixel_to_check[0]
+        green = pixel_to_check[1]
+        blue = pixel_to_check[2]
+        # print(red)
+        # print(green)
+        # print(blue)
+        if (175 <= red <= 255) and (0 <= green <= 200) and (0 <= blue <= 200):
+            this_side = "offense"
+        elif (40 <= red <= 215) and (155 <= green <= 255) and (195 <= blue <= 255):
+            this_side = "defense"
+        else:
+            this_side = "neither"
+            # print("Neither")
+            # print("rgb: " + str(red) + "," + str(green) + "," + str(blue))
+        if opposite:
+            switcher = {
+                "offense": "defense",
+                "defense": "offense",
+                "neither": "neither"
+            }
+            this_side = switcher[this_side]
+        return this_side
+
     def identify_objective_progress(self, img_array, mode="standard"):
         if "gameOver" not in self.objectiveProgress:
             return False
@@ -284,7 +314,6 @@ class MapInfo(GameObject):
             img.save(path + "\\Potential Objective.png", "PNG")
 
     def identify_assault_objective_progress(self, img_array, map_type, mode="standard"):
-        dimensions = {}
         check_game_end = False
         new_image_array = None
         this_status = None
@@ -297,14 +326,10 @@ class MapInfo(GameObject):
 
         if self.objectiveProgress["assaultPoint"] != "B":
             # Assault Point 1
-            dimensions["start_x"] = 918
-            dimensions["end_x"] = 930
-            dimensions["start_y"] = 114
-            dimensions["end_y"] = 128
             # color for side
             # pixel_to_check = img_array[108][927]
 
-            new_image_array = self.cut_and_threshold(img_array, dimensions)
+            new_image_array = self.cut_and_threshold(img_array, self.dimensions["assault"]["point1"])
             potential = self.what_image_is_this(new_image_array, self.assaultReference)
             this_status = max(potential.keys(), key=(lambda k: potential[k]))
 
@@ -321,11 +346,7 @@ class MapInfo(GameObject):
                 elif this_status != "Locked":
                     self.identify_assault_point_progress(img_array, 0, mode)
             elif map_type == "transition":
-                dimensions["start_x"] = 760
-                dimensions["end_x"] = 772
-                dimensions["start_y"] = 114
-                dimensions["end_y"] = 128
-                new_image_array = self.cut_and_threshold(img_array, dimensions)
+                new_image_array = self.cut_and_threshold(img_array, self.dimensions["assault"]["transition"])
                 potential = self.what_image_is_this(new_image_array, self.assaultReference)
                 this_status_key = max(potential.keys(), key=(lambda k: potential[k]))
                 this_status_split = this_status_key.split("-")
@@ -339,12 +360,8 @@ class MapInfo(GameObject):
                     check_game_end = True
         if check_assault_point2:
             # Assault Point 2
-            dimensions["start_x"] = 994
-            dimensions["end_x"] = 1006
-            dimensions["start_y"] = 114
-            dimensions["end_y"] = 128
             # pixel_to_check = img_array[108][997]
-            new_image_array = self.cut_and_threshold(img_array, dimensions)
+            new_image_array = self.cut_and_threshold(img_array, self.dimensions["assault"]["point2"])
             potential = self.what_image_is_this(new_image_array, self.assaultReference)
             this_status = max(potential.keys(), key=(lambda k: potential[k]))
             this_status_split = this_status.split("-")
@@ -382,44 +399,32 @@ class MapInfo(GameObject):
         print(assault_percent_complete)
 
     def identify_control_objective_progress(self, img_array, mode="standard"):
-        dimensions = {
-            'start_x': 952,
-            'end_x': 968,
-            'start_y': 78,
-            'end_y': 102
-        }
-        pixel_current_height = 108
+        pixel_current_height = 118  # 1.16 108
         pixel_side_height = 91
         reference = self.controlReference
         status_addendum = ""
-        new_image_array = self.cut_and_threshold(img_array, dimensions)
-        objective_identified = self.identify_control_core(img_array, new_image_array, pixel_current_height, pixel_side_height,
-                                                     reference, status_addendum)
+        new_image_array = self.cut_and_threshold(img_array, self.dimensions["control"]["normal"])
+        objective_identified = self.identify_control_core(img_array, new_image_array, pixel_current_height,
+                                                          pixel_side_height, reference, status_addendum)
 
         if objective_identified is False:
             # check if locked between rounds
-            dimensions['start_y'] = 115
-            dimensions['end_y'] = 139
             pixel_current_height = 145
             pixel_side_height = 128
             reference = {"Prepare": self.controlReference["Locked"]}
             status_addendum = ""
-            new_image_array = self.cut_and_threshold(img_array, dimensions)
-            objective_identified = self.identify_control_core(img_array, new_image_array, pixel_current_height, pixel_side_height,
-                                                         reference, status_addendum)
+            new_image_array = self.cut_and_threshold(img_array, self.dimensions["control"]["locked"])
+            objective_identified = self.identify_control_core(img_array, new_image_array, pixel_current_height,
+                                                              pixel_side_height, reference, status_addendum)
             if objective_identified is False:
                 # check for overtime
-
-                dimensions['start_y'] = 133
-                dimensions['end_y'] = 157
                 pixel_current_height = 163
                 pixel_side_height = 146
                 reference = self.controlReference
                 status_addendum = "-Overtime"
-                new_image_array = self.cut_and_threshold(img_array, dimensions)
+                new_image_array = self.cut_and_threshold(img_array, self.dimensions["control"]["overtime"])
                 objective_identified = self.identify_control_core(img_array, new_image_array, pixel_current_height,
-                                                             pixel_side_height,
-                                                             reference, status_addendum)
+                                                                  pixel_side_height, reference, status_addendum)
                 if objective_identified is False:
                     self.identify_game_end(img_array, mode)
 
@@ -448,20 +453,22 @@ class MapInfo(GameObject):
             }
             if this_status not in ["Locked", "Prepare"]:
                 this_side = self.team_from_pixel(pixel_to_check["current"])
-                # print("Current Controller: " + this_side)
-            for pixelIndex, thisPixel in pixel_to_check["left"].items():
-                team_result = self.team_from_pixel(thisPixel)
-                if team_result == "neither":
-                    our_progress = pixelIndex
-                    break
-            for pixelIndex, thisPixel in pixel_to_check["right"].items():
-                team_result = self.team_from_pixel(thisPixel)
-                if team_result == "neither":
-                    their_progress = pixelIndex
-                    break
+                print("Current Controller: " + this_side)
+            if not self.competitive:
+                for pixelIndex, thisPixel in pixel_to_check["left"].items():
+                    team_result = self.team_from_pixel(thisPixel)
+                    if team_result == "neither":
+                        our_progress = pixelIndex
+                        break
+                for pixelIndex, thisPixel in pixel_to_check["right"].items():
+                    team_result = self.team_from_pixel(thisPixel)
+                    if team_result == "neither":
+                        their_progress = pixelIndex
+                        break
             if self.objectiveProgress["controlProgress"][1] != our_progress or \
                     self.objectiveProgress["controlProgress"][2] != their_progress:
                 print("Game Progress | Us: " + str(our_progress) + "   Them: " + str(their_progress))
+            print("Game Progress | Us: " + str(our_progress) + "   Them: " + str(their_progress))
 
             this_status = this_status + status_addendum
             if this_status != self.objectiveProgress["controlProgress"][0]:
@@ -472,16 +479,17 @@ class MapInfo(GameObject):
             return False
 
     def identify_escort_objective_progress(self, img_array, map_type, mode="standard"):
-        dimensions = {}
-
+        self.competitive = self.identify_competitive(img_array, self.currentMapSide, mode)
+        if self.competitive:
+            competitive_string = "competitive"
+        else:
+            competitive_string = "quick"
+        print("Competitive: " + str(self.competitive))
+        # TODO adjust y values if competitive
         if map_type == "escort" and self.objectiveProgress["unlocked"] is False:
             # check for lock symbol
-            dimensions["start_x"] = 953
-            dimensions["end_x"] = 965
-            dimensions["start_y"] = 123
-            dimensions["end_y"] = 137
 
-            new_image_array = self.cut_and_threshold(img_array, dimensions)
+            new_image_array = self.cut_and_threshold(img_array, self.dimensions["escort"][competitive_string]["lock"])
             lock_reference = {
                 "Locked": self.assaultReference["Locked"]
             }
@@ -496,14 +504,6 @@ class MapInfo(GameObject):
                     img = Image.fromarray(new_image_array)
                     img.save(path + "\\Potential Objective.png", "PNG")
                 return new_image_array
-        dimensions["start_x"] = 787
-        dimensions["end_x"] = 1135
-        dimensions["start_y"] = 120  # was 132
-        dimensions["end_y"] = 130  # was 142
-
-        if map_type == "transition":
-            dimensions["start_x"] = 824
-            dimensions["end_x"] = 1172
 
         # dorodo point 1: 32%
         # dorodo point 2: 68%
@@ -516,10 +516,14 @@ class MapInfo(GameObject):
         # hollywood point 1: 61%
         # king's row point 1: 62%
         # numbani point 1: 58%
+        # TODO junkertown points
 
-        new_image_array = self.cut_image(img_array, dimensions)
+        new_image_array = self.cut_image(img_array,
+                                         self.dimensions["escort"][competitive_string]["progress_bar"][map_type])
         end_found = False
         percent_complete = None
+
+        dimensions = self.dimensions["escort"][competitive_string]["progress_bar"][map_type]
 
         for X in range(0, (dimensions["end_x"] - dimensions["start_x"])):
 
@@ -562,18 +566,49 @@ class MapInfo(GameObject):
 
         return new_image_array
 
+    def identify_competitive(self, img_array, team_side, mode="standard"):
+        dimensions = {
+            'offense': {
+                'start_x': 760,
+                'end_x': 880,
+                'y': 84
+            }, 'defense': {
+                'start_x': 1030,
+                'end_x': 1180,
+                'y': 84
+            }
+        }
+        # check to see if there is a red or blue box (depending on team)
+        box_beginning = 0
+        box_end = 0
+        for X in range(self.dimensions["competitive"][team_side]["start_x"],
+                       self.dimensions["competitive"][team_side]["end_x"]):
+            pixel_to_check = img_array[self.dimensions["competitive"][team_side]["y"]][X]
+            pixel_side = self.team_from_pixel_precise(pixel_to_check, opposite=True)
+            # print(str(X) + " " + str(pixel_to_check) + " " + pixel_side)
+            if pixel_side == team_side and box_beginning == 0:
+                box_beginning = X
+            elif pixel_side == "neither" and box_beginning != 0 and box_end == 0:
+                if 47 <= (X - box_beginning) <= 124:  # Approximate size of box, may be larger when in bright light
+                    box_end = X
+                    # print(str(box_beginning) + " " + str(box_end))
+                    # TODO if yes, grab current score
+                    return True
+                else:
+                    box_beginning = 0
+        return False
+        # TODO make sure this is done infrequently, such as only after a tab or hero select
+
     def identify_game_end(self, img_array, mode="standard"):
         print("Identify Game End")
-        dimensions = {
-            'start_x': 643,
-            'end_x': 1305,
-            'start_y': 440,
-            'end_y': 633
-        }
-        cropped_image_array = self.cut_image(img_array, dimensions)
+        if self.competitive:
+            competitive_string = "competitive"
+        else:
+            competitive_string = "quick"
+        cropped_image_array = self.cut_image(img_array, self.dimensions["game_end"][competitive_string])
         # -- Check for Victory  -- #
         # convert to black and white based on yellow
-        yellow = [230, 205, 100]
+        yellow = [230, 205, 135]
         result = self.game_end_format_image(cropped_image_array, yellow, "Victory")
         if type(result) is not bool:
             reference_dictionary = {
@@ -584,6 +619,7 @@ class MapInfo(GameObject):
                 self.objectiveProgress["gameEnd"] = "Victory"
                 print("Victory!")
                 self.set_game_over()
+            print(potential)
         if self.objectiveProgress["gameEnd"] != "Victory":
             # -- Check for Defeat -- #
             red = [210, 120, 130]
@@ -606,9 +642,9 @@ class MapInfo(GameObject):
         cropped_image_array = image_array.copy()
         cropped_image_array.setflags(write=True)
 
-        img = Image.fromarray(cropped_image_array)
-        cropped_image_array = np.asarray((img.resize((200, 56), Image.BILINEAR)))
-        cropped_image_array.setflags(write=True)
+        # img = Image.fromarray(cropped_image_array)
+        # cropped_image_array = np.asarray((img.resize((200, 56), Image.BILINEAR)))
+        # cropped_image_array.setflags(write=True)
 
         black_check_column = {}
         rows_to_cut = []
@@ -617,6 +653,7 @@ class MapInfo(GameObject):
         previous_row = None
         previous_column = None
 
+        # threshold image to B&W
         for rowNumber, eachRow in enumerate(cropped_image_array):
             black_check_row = True
 
@@ -650,6 +687,7 @@ class MapInfo(GameObject):
             if black_check_row:
                 rows_to_cut.append(rowNumber)
 
+        # cut image where entire rows are black
         new_dimensions = {}
         # cut top edge
         for index, this_row in enumerate(rows_to_cut):
@@ -679,19 +717,24 @@ class MapInfo(GameObject):
                     new_dimensions["end_x"] = previous_column
                     break
             previous_column = thisColumn
-        if ("start_y" not in new_dimensions) \
-                or ("end_y" not in new_dimensions) \
-                or ("start_x" not in new_dimensions) \
-                or ("end_x" not in new_dimensions):
-            # path = "Debug"
-            # save image
-            # img = Image.fromarray(cropped_image_array)
-            # img.save(path + "\\" + mode + ".png", "PNG")
+        column_names = ("start_y", "end_y", "start_x", "start_y")
+        if not all(name in new_dimensions for name in column_names):
             return False
+
+        # save image
+        path = "Debug"
+        img = Image.fromarray(cropped_image_array)
+        img.save(path + "\\" + mode + ".png", "PNG")
+
         new_cropped_image_array = self.cut_image(cropped_image_array, new_dimensions)
         img = Image.fromarray(new_cropped_image_array)
         scaled_image_array = self.threshold(np.asarray((img.resize((160, 45), Image.BILINEAR))))
         scaled_image = Image.fromarray(scaled_image_array)
+
+        # save image
+        path = "Debug"
+        scaled_image.save(path + "\\" + mode + " scaled.png", "PNG")
+
         if len(scaled_image_array[0]) != len(self.gameEndReference["Victory"][0]) and \
                 len(scaled_image_array) != len(self.gameEndReference["Victory"]):
             return False
@@ -746,3 +789,238 @@ class MapInfo(GameObject):
         del objective_dictionary["gameEnd"]
 
         return objective_dictionary
+
+    def dimensions_from_version(self):
+        dimensions = {
+            "1.16": {
+                "assault": {
+                    "point1": {
+                        "start_x": 918,
+                        "end_x": 930,
+                        "start_y": 125,
+                        "end_y": 139
+                    },
+                    "point2": {
+                        "start_x": 994,
+                        "end_x": 1006,
+                        "start_y": 125,
+                        "end_y": 139
+                    },
+                    "transition": {
+                        "start_x": 760,
+                        "end_x": 772,
+                        "start_y": 125,
+                        "end_y": 139
+                    }
+                },
+                "control": {
+                    "normal": {
+                        'start_x': 952,
+                        'end_x': 968,
+                        'start_y': 78,
+                        'end_y': 102
+                    },
+                    "locked": {
+                        'start_x': 952,
+                        'end_x': 968,
+                        'start_y': 115,
+                        'end_y': 139
+                    },
+                    "overtime": {
+                        'start_x': 952,
+                        'end_x': 968,
+                        'start_y': 133,
+                        'end_y': 157
+                    }
+                },
+                "escort": {
+                    "quick": {
+                        "lock": {
+                            "start_x": 953,
+                            "end_x": 965,
+                            "start_y": 110,
+                            "end_y": 124
+                        },
+                        "progress_bar": {
+                            "escort": {
+                                "start_x": 787,
+                                "end_x": 1135,
+                                "start_y": 120,
+                                "end_y": 130
+                            },
+                            "transition": {
+                                "start_x": 824,
+                                "end_x": 1172,
+                                "start_y": 120,
+                                "end_y": 130
+                            }
+
+                        },
+                    },
+                    'competitive': {
+                        'lock': {
+                            "start_x": 953,
+                            "end_x": 965,
+                            "start_y": 123,
+                            "end_y": 137
+                        },
+                        "progress_bar": {
+                            "escort": {
+                                "start_x": 787,
+                                "end_x": 1135,
+                                "start_y": 132,
+                                "end_y": 142
+                            },
+                            "transition": {
+                                "start_x": 824,
+                                "end_x": 1172,
+                                "start_y": 132,
+                                "end_y": 142
+                            },
+                        }
+
+                    }
+                },
+                'competitive': {
+                    'offense': {
+                        'start_x': 760,
+                        'end_x': 880,
+                        'y': 84
+                    }, 'defense': {
+                        'start_x': 1030,
+                        'end_x': 1180,
+                        'y': 84
+                    }
+                },
+                'game_end': {
+                    'quick': {
+                        'start_x': 730,
+                        'end_x': 1200,
+                        'start_y': 270,
+                        'end_y': 410
+                    },
+                    'competitive': {
+                        'start_x': 643,
+                        'end_x': 1305,
+                        'start_y': 440,
+                        'end_y': 633
+                    }
+                }
+            },
+            "1.17": {
+                "assault": {
+                    "point1": {
+                        "start_x": 918,
+                        "end_x": 930,
+                        "start_y": 125,
+                        "end_y": 139
+                    },
+                    "point2": {
+                        "start_x": 994,
+                        "end_x": 1006,
+                        "start_y": 125,
+                        "end_y": 139
+                    },
+                    "transition": {
+                        "start_x": 760,
+                        "end_x": 772,
+                        "start_y": 125,
+                        "end_y": 139
+                    }
+                },
+                "control": {
+                    "normal": {
+                        'start_x': 952,
+                        'end_x': 968,
+                        'start_y': 87,
+                        'end_y': 111
+                    },
+                    "locked": {
+                        'start_x': 952,
+                        'end_x': 968,
+                        'start_y': 138,
+                        'end_y': 162
+                    },
+                    "overtime": {
+                        'start_x': 952,
+                        'end_x': 968,
+                        'start_y': 147,
+                        'end_y': 171
+                    }
+                },
+                "escort": {
+                    "quick": {
+                        "lock": {
+                            "start_x": 953,
+                            "end_x": 965,
+                            "start_y": 110,
+                            "end_y": 124
+                        },
+                        "progress_bar": {
+                            "escort": {
+                                "start_x": 787,
+                                "end_x": 1135,
+                                "start_y": 120,
+                                "end_y": 130
+                            },
+                            "transition": {
+                                "start_x": 824,
+                                "end_x": 1172,
+                                "start_y": 120,
+                                "end_y": 130
+                            }
+
+                        },
+                    },
+                    'competitive': {
+                        'lock': {
+                            "start_x": 953,
+                            "end_x": 965,
+                            "start_y": 123,
+                            "end_y": 137
+                        },
+                        "progress_bar": {
+                            "escort": {
+                                "start_x": 787,
+                                "end_x": 1135,
+                                "start_y": 132,
+                                "end_y": 142
+                            },
+                            "transition": {
+                                "start_x": 824,
+                                "end_x": 1172,
+                                "start_y": 132,
+                                "end_y": 142
+                            },
+                        }
+
+                    }
+                },
+                'competitive': {
+                    'offense': {
+                        'start_x': 760,
+                        'end_x': 880,
+                        'y': 84
+                    }, 'defense': {
+                        'start_x': 1030,
+                        'end_x': 1180,
+                        'y': 84
+                    }
+                },
+                'game_end': {
+                    'quick': {
+                        'start_x': 730,
+                        'end_x': 1200,
+                        'start_y': 270,
+                        'end_y': 410
+                    },
+                    'competitive': {
+                        'start_x': 643,
+                        'end_x': 1305,
+                        'start_y': 440,
+                        'end_y': 633
+                    }
+                }
+            }
+        }
+        return dimensions[self.game_version]
