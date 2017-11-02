@@ -26,11 +26,18 @@ class Statistics:
         # print("Round Start Time Array Length: " + str(len(self.round_start_time)))
 
         safe_to_adjust = False
+        # Control
         if "controlProgress" in latest_snapshot.objective_progress:
             if latest_snapshot.objective_progress["controlProgress"][0] not in [None, "Prepare"]:
                 safe_to_adjust = True
         else:
             safe_to_adjust = True
+
+        # TODO Escort
+
+        # TODO Assault
+
+        # TODO Assault/Escort
 
         if latest_snapshot.game_time["verified"] and safe_to_adjust:
             current_game_time = latest_snapshot.game_time["datetime"]
@@ -79,6 +86,7 @@ class Statistics:
                 })
         elif not safe_to_adjust:
             if self.previous_time is not None and not latest_snapshot.game_time["verified"]:
+                # Control
                 if "controlProgress" in self.snapshots[-2].objective_progress:
                     if self.snapshots[-2].objective_progress["controlProgress"][0] not in [None, "Prepare"]:
                         current_game_time = self.previous_time
@@ -93,16 +101,21 @@ class Statistics:
                         self.temporary_round_start = True
                     else:
                         current_game_time = self.previous_time
+                # TODO Escort
+
+                # TODO Assault
+
+                # TODO Assault/Escort
             elif latest_snapshot.game_time["verified"]:
                 self.previous_time = latest_snapshot.game_time["datetime"]
                 current_game_time = self.previous_time
                 game_time_delta = timedelta(minutes=current_game_time.minute, seconds=current_game_time.second)
                 calculated_round_start_time = latest_snapshot.system_time - game_time_delta
                 if len(self.round_start_time) == 0:
-                    self.round_start_time[0] = {
+                    self.round_start_time.append({
                         "start_time": calculated_round_start_time,
                         "game_time": current_game_time
-                    }
+                    })
                 else:
                     self.round_start_time[-1] = {
                         "start_time": calculated_round_start_time,
@@ -155,7 +168,7 @@ class Statistics:
                     continue
                 current_round_times = self.round_start_time[-round_start_time_index]
                 if current_round_times["start_time"] < snapshot.system_time:
-                    print("Step 2: Correct Time Sync")
+                    print("Step 2: Time Correctly Synced")
                     system_time_delta = snapshot.system_time - current_round_times["start_time"]
                     game_time_delta = system_time_delta - timedelta(
                         minutes=current_round_times["game_time"].minute,
