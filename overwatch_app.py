@@ -24,9 +24,9 @@ class AppController(ApplicationSession):
 
         # Set debugMode to True if you want to save images in debug folder
         self.debugMode = True
-        self.game_version = "1.16"  # PTR or Live
+        self.game_version = "1.17"  # 1.16 or 1.17
 
-        self.this_map = "oasis"
+        self.this_map = "junkertown"
         self.this_side = "offense"
 
     async def onJoin(self, details):
