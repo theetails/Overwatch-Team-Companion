@@ -62,6 +62,8 @@ class TimeInfo(GameObject):
                     loop_count = loop_count + 1
                     continue
                 # print("Not Colon")
+
+            # TODO have a potential / check for a color | voice chat notifications cover time
             this_digit_array = self.cut_and_threshold(img_array, dimensions)
             potential = self.what_image_is_this(this_digit_array, self.digitReferences)
             this_digit_full = max(potential.keys(), key=(lambda k: potential[k]))
@@ -96,7 +98,10 @@ class TimeInfo(GameObject):
             else:
                 loop_count = loop_count + 1
         if time_string[1] == ":" or time_string[2] == ":":  # assume correct read
-            this_time_formatted = datetime.strptime(time_string, "%M:%S")
+            try:
+                this_time_formatted = datetime.strptime(time_string, "%M:%S")
+            except ValueError:
+                print("Time Not Right")
             self.game_datetime = this_time_formatted
             print("Game Time: " + datetime.strftime(this_time_formatted, "%M:%S"))
             self.newly_verified_game_time = True
