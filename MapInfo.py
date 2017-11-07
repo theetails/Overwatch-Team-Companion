@@ -49,7 +49,10 @@ class MapInfo(GameObject):
     }
 
     def __init__(self, game_version, debug_mode):
-        self.competitive = True;
+        self.competitive = True
+        self.competitive_confirmed = False
+        self.check_competitive = True
+
         self.objectiveProgress = {}
         self.assaultPixelsToCheck = []
 
@@ -75,11 +78,13 @@ class MapInfo(GameObject):
         map_result = self.identify_map(screen_image_array, "Tab")
         if map_result:
             this_view = "Tab"
+            self.check_competitive = True
         else:
             # check if Hero Select View
             map_result = self.identify_map(screen_image_array, "Hero Select")
             if map_result:
                 this_view = "Hero Select"
+                self.check_competitive = True
             else:
                 this_view = False
 
@@ -110,19 +115,26 @@ class MapInfo(GameObject):
     def calculate_assault_progress_pixels(self):
         assault_radius = 23  # px
         self.assaultPixelsToCheck = []
-        center_points = [[925, 120], [1000, 120]]
+        center_points = [[925, 138], [996, 138]]
         point_number = 0
         for centerPoint in center_points:
             self.assaultPixelsToCheck.append([])
-            for percentage in range(0, 100):
-                theta = -(percentage - 125) / (5 / 18)
+            for percentage in range(1, 101):
+                # theta = -(percentage - 125) / (5 / 18) # complete circle; it is segmented as of 1.17
+                if 1 <= percentage <= 33:
+                    theta = 108.23 * percentage / -32 + 448.41
+                elif 34 <= percentage <= 66:
+                    theta = 108.62 * percentage / -32 + 440.42
+                elif 67 <= percentage <= 100:
+                    theta = 108.23 * percentage / -33 + 422.94
+
                 x_coordinate = int((np.cos(np.deg2rad(theta)) * assault_radius) + centerPoint[0])
-                if percentage > 50:  # center isn't perfectly center
-                    x_coordinate = x_coordinate - 1
+                if percentage < 50:  # center isn't perfectly center
+                    x_coordinate = x_coordinate + 1
                 y_coordinate = int(-(np.sin(np.deg2rad(theta)) * assault_radius) + centerPoint[1])
                 if 25 < percentage < 75:  # center isn't perfectly center
                     y_coordinate = y_coordinate + 1
-                # print (str(percentage) + " " + str(theta) + " " + str(x_coordinate) + " " + str(y_coordinate))
+                # print(str(percentage) + " " + str(theta) + " " + str(x_coordinate) + " " + str(y_coordinate))
                 self.assaultPixelsToCheck[point_number].append([x_coordinate, y_coordinate])
             point_number = point_number + 1
 
@@ -242,34 +254,16 @@ class MapInfo(GameObject):
             return False
 
     @staticmethod
-    def team_from_pixel(pixel_to_check):
+    def team_from_pixel(pixel_to_check, opposite=False):
         red = pixel_to_check[0]
         green = pixel_to_check[1]
         blue = pixel_to_check[2]
         # print(red)
         # print(green)
         # print(blue)
-        if (red > 195) and (green < 200) and (blue < 200):
+        if (red > 195) and (green < 200) and (blue < 200):  # red
             this_side = "offense"
-        elif (red < 200) and (green > 180) and (blue > 100):
-            this_side = "defense"
-        else:
-            this_side = "neither"
-            # print("Neither")
-            # print("rgb: " + str(red) + "," + str(green) + "," + str(blue))
-        return this_side
-
-    @staticmethod
-    def team_from_pixel_precise(pixel_to_check, opposite=False):
-        red = pixel_to_check[0]
-        green = pixel_to_check[1]
-        blue = pixel_to_check[2]
-        # print(red)
-        # print(green)
-        # print(blue)
-        if (175 <= red <= 255) and (0 <= green <= 200) and (0 <= blue <= 200):
-            this_side = "offense"
-        elif (40 <= red <= 215) and (155 <= green <= 255) and (195 <= blue <= 255):
+        elif (red < 200) and (green > 170) and (blue > 100):  # blue
             this_side = "defense"
         else:
             this_side = "neither"
@@ -284,7 +278,61 @@ class MapInfo(GameObject):
             this_side = switcher[this_side]
         return this_side
 
-    def identify_objective_progress(self, img_array, mode="standard"):
+    @staticmethod
+    def team_from_pixel_opaque(pixel_to_check, opposite=False):
+        red = pixel_to_check[0]
+        green = pixel_to_check[1]
+        blue = pixel_to_check[2]
+        # print(red)
+        # print(green)
+        # print(blue)
+        if (230 <= red <= 255) and (0 <= green <= 220) and (0 <= blue <= 245) and \
+                (int(red) - int(blue) >= 25 and int(red) - int(green) > 10) or \
+                (int(red) - int(blue) > 10 and int(red) - int(green) >= 25):
+                this_side = "offense"
+
+        elif (38 <= red <= 235) and (140 <= green <= 255) and (175 <= blue <= 255) and (int(blue) - int(red) > 30):
+            this_side = "defense"
+        else:
+            this_side = "neither"
+            # print("Neither")
+            # print("rgb: " + str(red) + "," + str(green) + "," + str(blue))
+        if opposite:
+            switcher = {
+                "offense": "defense",
+                "defense": "offense",
+                "neither": "neither"
+            }
+            this_side = switcher[this_side]
+        return this_side
+
+    @staticmethod
+    def team_from_pixel_precise(pixel_to_check, opposite=False):
+        red = pixel_to_check[0]
+        green = pixel_to_check[1]
+        blue = pixel_to_check[2]
+        # print(red)
+        # print(green)
+        # print(blue)
+        if (175 <= red <= 255) and (0 <= green <= 200) and (0 <= blue <= 200) \
+                and (int(red) - int(blue) > 10) and (int(red) - int(green) > 10):
+            this_side = "offense"
+        elif (38 <= red <= 215) and (140 <= green <= 255) and (175 <= blue <= 255) and (int(blue) - int(red) > 10):
+            this_side = "defense"
+        else:
+            this_side = "neither"
+            # print("Neither")
+            # print("rgb: " + str(red) + "," + str(green) + "," + str(blue))
+        if opposite:
+            switcher = {
+                "offense": "defense",
+                "defense": "offense",
+                "neither": "neither"
+            }
+            this_side = switcher[this_side]
+        return this_side
+
+    def identify_objective_progress(self, img_array, mode="standard", current_view=False):
         if "gameOver" not in self.objectiveProgress:
             return False
         if self.current_map == [None] or self.objectiveProgress["gameOver"] is True:
@@ -299,21 +347,31 @@ class MapInfo(GameObject):
             self.objectiveProgress["currentType"] = map_type
 
         if self.objectiveProgress["currentType"] == "assault":
-            new_image_array = self.identify_assault_objective_progress(img_array, map_type, mode)
+            new_image_array = self.identify_assault_objective_progress(img_array, map_type, current_view, mode)
 
         if self.objectiveProgress["currentType"] == "control":
             new_image_array = self.identify_control_objective_progress(img_array, mode)
 
         if self.objectiveProgress["currentType"] == "escort":
-            new_image_array = self.identify_escort_objective_progress(img_array, map_type, mode)
+            # TODO don't check competitive in Tab view
+            new_image_array = self.identify_escort_objective_progress(img_array, map_type, current_view, mode)
 
-        if mode == "for_reference":
+        if mode == "for_reference" and new_image_array is not None:
             path = "Debug"
             # save image
             img = Image.fromarray(new_image_array)
             img.save(path + "\\Potential Objective.png", "PNG")
 
-    def identify_assault_objective_progress(self, img_array, map_type, mode="standard"):
+    def identify_assault_objective_progress(self, img_array, map_type, current_view, mode="standard", loop_count=0):
+        if self.check_competitive and current_view != "Tab":
+            self.competitive = self.identify_competitive(img_array, self.currentMapSide, mode)
+            self.check_competitive = False
+            print("Competitive: " + str(self.competitive))
+        if self.competitive:
+            competitive_string = "competitive"
+        else:
+            competitive_string = "quick"
+
         check_game_end = False
         new_image_array = None
         this_status = None
@@ -329,11 +387,19 @@ class MapInfo(GameObject):
             # color for side
             # pixel_to_check = img_array[108][927]
 
-            new_image_array = self.cut_and_threshold(img_array, self.dimensions["assault"]["point1"])
+            new_image_array = self.cut_and_threshold(
+                img_array, self.dimensions["assault"][competitive_string]["point1"])
             potential = self.what_image_is_this(new_image_array, self.assaultReference)
             this_status = max(potential.keys(), key=(lambda k: potential[k]))
 
+            # TODO Delete me
+            path = "Debug"
+            # save image
+            img = Image.fromarray(new_image_array)
+            img.save(path + "\\Potential Assault Point 1.png", "PNG")
+
             if potential[this_status] > self.imageThreshold["Assault"]:  # max 166?
+                self.competitive_confirmed = True
                 this_status_split = this_status.split("-")
                 this_status = this_status_split[0]
                 if this_status == "Done":
@@ -346,13 +412,15 @@ class MapInfo(GameObject):
                 elif this_status != "Locked":
                     self.identify_assault_point_progress(img_array, 0, mode)
             elif map_type == "transition":
-                new_image_array = self.cut_and_threshold(img_array, self.dimensions["assault"]["transition"])
+                new_image_array = self.cut_and_threshold(
+                    img_array, self.dimensions["assault"][competitive_string]["transition"])
                 potential = self.what_image_is_this(new_image_array, self.assaultReference)
                 this_status_key = max(potential.keys(), key=(lambda k: potential[k]))
                 this_status_split = this_status_key.split("-")
                 this_status = this_status_split[0]
                 if potential[this_status_key] > self.imageThreshold["Assault"] and \
                         (this_status == "Locked" or this_status == "Done"):
+                    self.competitive_confirmed = True
                     print("Transition to Escort")
                     self.objectiveProgress["currentType"] = "escort"
                     return
@@ -361,17 +429,23 @@ class MapInfo(GameObject):
         if check_assault_point2:
             # Assault Point 2
             # pixel_to_check = img_array[108][997]
-            new_image_array = self.cut_and_threshold(img_array, self.dimensions["assault"]["point2"])
+            new_image_array = self.cut_and_threshold(
+                img_array, self.dimensions["assault"][competitive_string]["point2"])
             potential = self.what_image_is_this(new_image_array, self.assaultReference)
             this_status = max(potential.keys(), key=(lambda k: potential[k]))
             this_status_split = this_status.split("-")
             this_status = this_status_split[0]
             if potential[this_status] > self.imageThreshold["Assault"]:
+                self.competitive_confirmed = True
                 self.identify_assault_point_progress(img_array, 1, mode)
             else:
                 check_game_end = True
         if check_game_end:
-            self.identify_game_end(img_array, mode)
+            if not self.competitive_confirmed and loop_count == 0:
+                self.competitive = not self.competitive
+                self.identify_assault_objective_progress(img_array, map_type, current_view, mode, loop_count=1)
+            else:
+                self.identify_game_end(img_array, mode)
         else:
             # if this_status != "Locked":
             # Do I need to use this?
@@ -386,17 +460,41 @@ class MapInfo(GameObject):
 
     def identify_assault_point_progress(self, img_array, point_number, mode="standard"):
         assault_percent_complete = 0
-        for pixelCoordinates in self.assaultPixelsToCheck[point_number]:
-            this_pixel = img_array[pixelCoordinates[1]][pixelCoordinates[0]]
-            avg_color_brightness = reduce(lambda x, y: int(x) + int(y), this_pixel[:3]) / 3
-            if avg_color_brightness > 248:
+        img_copy = img_array.copy()
+        img_copy.setflags(write=1)
+        fail_count = 0
+        for percent, pixelCoordinates in enumerate(self.assaultPixelsToCheck[point_number]):
+            x_coordinate = pixelCoordinates[0]
+            y_coordinate = pixelCoordinates[1]
+            if self.competitive:
+                y_coordinate += 2
+            this_pixel = img_array[y_coordinate][x_coordinate]
+            # 1.16
+            # avg_color_brightness = reduce(lambda x, y: int(x) + int(y), this_pixel[:3]) / 3
+            # if avg_color_brightness > 248:
+            debug_color = 0
+            pixel_side = self.team_from_pixel_opaque(this_pixel, opposite=True)
+            # if this_pixel[0] >= 230:
+            if self.currentMapSide == pixel_side:
                 assault_percent_complete = assault_percent_complete + 1
-            elif mode != "standard":
-                print(pixelCoordinates)
-                print(this_pixel)
+                debug_color = 255
+                fail_count = 0
+            else:
+                fail_count += 1
+                if fail_count > 5:
+                    break
+
+            if mode != "standard":
+                print(str(percent) + " " + str(self.currentMapSide == pixel_side) + " " + str([x_coordinate, y_coordinate]) + str(this_pixel))
+
+            img_copy[y_coordinate][x_coordinate][0] = debug_color
+            img_copy[y_coordinate][x_coordinate][1] = debug_color
+            img_copy[y_coordinate][x_coordinate][2] = debug_color
 
         self.objectiveProgress["assaultPointProgress"] = assault_percent_complete
         print(assault_percent_complete)
+        img = Image.fromarray(img_copy)
+        img.save("Debug\\Assault Progress.png", "PNG")
 
     def identify_control_objective_progress(self, img_array, mode="standard"):
         pixel_current_height = 118  # 1.16 108
@@ -478,14 +576,16 @@ class MapInfo(GameObject):
         else:
             return False
 
-    def identify_escort_objective_progress(self, img_array, map_type, mode="standard"):
-        self.competitive = self.identify_competitive(img_array, self.currentMapSide, mode)
+    def identify_escort_objective_progress(self, img_array, map_type, current_view, mode="standard"):
+        if self.check_competitive and current_view != "Tab":
+            self.competitive = self.identify_competitive(img_array, self.currentMapSide, mode)
+            self.check_competitive = False
+            print("Competitive: " + str(self.competitive))
         if self.competitive:
             competitive_string = "competitive"
         else:
             competitive_string = "quick"
-        print("Competitive: " + str(self.competitive))
-        # TODO adjust y values if competitive
+
         if map_type == "escort" and self.objectiveProgress["unlocked"] is False:
             # check for lock symbol
 
@@ -516,7 +616,8 @@ class MapInfo(GameObject):
         # hollywood point 1: 61%
         # king's row point 1: 62%
         # numbani point 1: 58%
-        # TODO junkertown points
+        # junkertown point 1: 32%
+        # junkertown point 2: 64%
 
         new_image_array = self.cut_image(img_array,
                                          self.dimensions["escort"][competitive_string]["progress_bar"][map_type])
@@ -528,7 +629,7 @@ class MapInfo(GameObject):
         for X in range(0, (dimensions["end_x"] - dimensions["start_x"])):
 
             pixel_to_check = new_image_array[5][X]
-            pixel_team = self.team_from_pixel(pixel_to_check)
+            pixel_team = self.team_from_pixel(pixel_to_check, opposite=True)
             if pixel_team != self.currentMapSide:
                 percent_complete = round(X / (dimensions["end_x"] - dimensions["start_x"]) * 100)
                 print("Percent Complete: " + str(percent_complete))
@@ -567,17 +668,6 @@ class MapInfo(GameObject):
         return new_image_array
 
     def identify_competitive(self, img_array, team_side, mode="standard"):
-        dimensions = {
-            'offense': {
-                'start_x': 760,
-                'end_x': 880,
-                'y': 84
-            }, 'defense': {
-                'start_x': 1030,
-                'end_x': 1180,
-                'y': 84
-            }
-        }
         # check to see if there is a red or blue box (depending on team)
         box_beginning = 0
         box_end = 0
@@ -585,17 +675,26 @@ class MapInfo(GameObject):
                        self.dimensions["competitive"][team_side]["end_x"]):
             pixel_to_check = img_array[self.dimensions["competitive"][team_side]["y"]][X]
             pixel_side = self.team_from_pixel_precise(pixel_to_check, opposite=True)
-            # print(str(X) + " " + str(pixel_to_check) + " " + pixel_side)
+            if mode == "for_reference":
+                print(str(X) + " " + str(pixel_to_check) + " " + pixel_side)
             if pixel_side == team_side and box_beginning == 0:
                 box_beginning = X
             elif pixel_side == "neither" and box_beginning != 0 and box_end == 0:
-                if 47 <= (X - box_beginning) <= 124:  # Approximate size of box, may be larger when in bright light
-                    box_end = X
-                    # print(str(box_beginning) + " " + str(box_end))
+                if 45 <= (X - box_beginning) <= 124:  # Approximate size of box, may be larger when in bright light
+                    if mode == "for_reference":
+                        box_end = X
+                        print(str(box_beginning) + " " + str(box_end))
                     # TODO if yes, grab current score
                     return True
                 else:
                     box_beginning = 0
+        # if it reaches the end of the for loop and is still the right color:
+        if box_beginning != 0 and box_end == 0 and (45 <= (X - box_beginning) <= 124):
+            if mode == "for_reference":
+                box_end = X
+                print(str(box_beginning) + " " + str(box_end))
+            # TODO if yes, grab current score
+            return True
         return False
         # TODO make sure this is done infrequently, such as only after a tab or hero select
 
@@ -604,11 +703,18 @@ class MapInfo(GameObject):
         if self.competitive:
             competitive_string = "competitive"
         else:
-            competitive_string = "quick"
+            competitive_string = "competitive"
         cropped_image_array = self.cut_image(img_array, self.dimensions["game_end"][competitive_string])
+
+        if mode == "for_reference":
+            # save image
+            path = "Debug"
+            img = Image.fromarray(cropped_image_array)
+            img.save(path + "\\" + "Game End Cropped.png", "PNG")
+
         # -- Check for Victory  -- #
         # convert to black and white based on yellow
-        yellow = [230, 205, 135]
+        yellow = [230, 205, 141]
         result = self.game_end_format_image(cropped_image_array, yellow, "Victory")
         if type(result) is not bool:
             reference_dictionary = {
@@ -794,7 +900,7 @@ class MapInfo(GameObject):
         dimensions = {
             "1.16": {
                 "assault": {
-                    "point1": {
+                    "quick": {"point1": {
                         "start_x": 918,
                         "end_x": 930,
                         "start_y": 125,
@@ -811,7 +917,26 @@ class MapInfo(GameObject):
                         "end_x": 772,
                         "start_y": 125,
                         "end_y": 139
-                    }
+                    }},
+                    "competitive": {"point1": {
+                        "start_x": 918,
+                        "end_x": 930,
+                        "start_y": 125,
+                        "end_y": 139
+                    },
+                    "point2": {
+                        "start_x": 994,
+                        "end_x": 1006,
+                        "start_y": 125,
+                        "end_y": 139
+                    },
+                    "transition": {
+                        "start_x": 760,
+                        "end_x": 772,
+                        "start_y": 125,
+                        "end_y": 139
+                    }}
+
                 },
                 "control": {
                     "normal": {
@@ -909,23 +1034,45 @@ class MapInfo(GameObject):
             },
             "1.17": {
                 "assault": {
-                    "point1": {
-                        "start_x": 918,
-                        "end_x": 930,
-                        "start_y": 125,
-                        "end_y": 139
+                    "quick": {
+                        "point1": {
+                            "start_x": 919,
+                            "end_x": 931,
+                            "start_y": 132,
+                            "end_y": 146
+                        },
+                        "point2": {
+                            "start_x": 990,
+                            "end_x": 1002,
+                            "start_y": 132,
+                            "end_y": 146
+                        },
+                        "transition": {
+                            "start_x": 760,
+                            "end_x": 772,
+                            "start_y": 132,
+                            "end_y": 146
+                        }
                     },
-                    "point2": {
-                        "start_x": 994,
-                        "end_x": 1006,
-                        "start_y": 125,
-                        "end_y": 139
-                    },
-                    "transition": {
-                        "start_x": 760,
-                        "end_x": 772,
-                        "start_y": 125,
-                        "end_y": 139
+                    "competitive": {
+                        "point1": {
+                            "start_x": 919,
+                            "end_x": 931,
+                            "start_y": 133,
+                            "end_y": 147
+                        },
+                        "point2": {
+                            "start_x": 990,
+                            "end_x": 1002,
+                            "start_y": 133,
+                            "end_y": 147
+                        },
+                        "transition": {
+                            "start_x": 761,
+                            "end_x": 773,
+                            "start_y": 133,
+                            "end_y": 147
+                        }
                     }
                 },
                 "control": {
@@ -953,21 +1100,21 @@ class MapInfo(GameObject):
                         "lock": {
                             "start_x": 953,
                             "end_x": 965,
-                            "start_y": 110,
-                            "end_y": 124
+                            "start_y": 130,
+                            "end_y": 144
                         },
                         "progress_bar": {
                             "escort": {
                                 "start_x": 787,
                                 "end_x": 1135,
-                                "start_y": 120,
-                                "end_y": 130
+                                "start_y": 137,
+                                "end_y": 148
                             },
                             "transition": {
                                 "start_x": 824,
                                 "end_x": 1172,
-                                "start_y": 120,
-                                "end_y": 130
+                                "start_y": 137,
+                                "end_y": 148
                             }
 
                         },
@@ -976,15 +1123,15 @@ class MapInfo(GameObject):
                         'lock': {
                             "start_x": 953,
                             "end_x": 965,
-                            "start_y": 123,
-                            "end_y": 137
+                            "start_y": 132,
+                            "end_y": 146
                         },
                         "progress_bar": {
                             "escort": {
                                 "start_x": 787,
                                 "end_x": 1135,
-                                "start_y": 132,
-                                "end_y": 142
+                                "start_y": 138,
+                                "end_y": 150
                             },
                             "transition": {
                                 "start_x": 824,
@@ -1000,25 +1147,25 @@ class MapInfo(GameObject):
                     'offense': {
                         'start_x': 760,
                         'end_x': 880,
-                        'y': 84
+                        'y': 100
                     }, 'defense': {
                         'start_x': 1030,
                         'end_x': 1180,
-                        'y': 84
+                        'y': 100
                     }
                 },
                 'game_end': {
                     'quick': {
+                        'start_x': 630,
+                        'end_x': 1316,
+                        'start_y': 440,
+                        'end_y': 633
+                    },
+                    'competitive': {
                         'start_x': 730,
                         'end_x': 1200,
                         'start_y': 270,
                         'end_y': 410
-                    },
-                    'competitive': {
-                        'start_x': 643,
-                        'end_x': 1305,
-                        'start_y': 440,
-                        'end_y': 633
                     }
                 }
             }

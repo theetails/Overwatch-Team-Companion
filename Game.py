@@ -57,7 +57,7 @@ class Game:
 
             if current_view == "Tab":
                 sleep_time = 0.5
-                self.map.identify_objective_progress(screen_img_array)
+                self.map.identify_objective_progress(screen_img_array, current_view=current_view)
                 self.gameTime.main(screen_img_array, current_time_string)
             elif current_view == "Hero Select":
                 sleep_time = 1
@@ -74,6 +74,7 @@ class Game:
                 print("Submit Stats and Clear")
                 self.statistics.submit_stats(self.map.objectiveProgress["gameEnd"], current_time)
                 self.statistics = None
+                sleep_time = 10
                 # TODO remove
                 # self.map.reset_objective_progress()
             else:
