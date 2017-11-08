@@ -4,6 +4,7 @@ from os import listdir
 import subprocess as sp
 import asyncio
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
+import configparser
 
 from AppUI import AppUI
 from Game import Game
@@ -22,12 +23,29 @@ class AppController(ApplicationSession):
         self.subscription = None
         self.gameObject = None
 
-        # Set debugMode to True if you want to save images in debug folder
-        self.debugMode = True
-        self.game_version = "1.17"  # 1.16 or 1.17
+        # TODO check for file; copy from default if it doesn't exist
+        config_file = "options.ini"
+        overwatch_config = self.open_config(config_file)
 
-        self.this_map = "junkertown"
-        self.this_side = "offense"
+        self.debug_mode = overwatch_config["debug_mode"]
+        self.game_version = overwatch_config["version"]
+
+        self.this_map = overwatch_config["map"]
+        self.this_side = overwatch_config["side"]
+
+    @staticmethod
+    def open_config(config_file):
+        config_parser = configparser.ConfigParser()
+        config_parser.read(config_file)
+
+        # TODO Fall-backs
+        config = {
+            "version": config_parser.get('Standard', 'Version'),
+            "debug_mode": config_parser.get('Standard', 'Debug'),
+            "map": config_parser.get('Debug', 'Map'),
+            "side": config_parser.get('Debug', 'Side'),
+        }
+        return config
 
     async def onJoin(self, details):
 
@@ -58,7 +76,7 @@ class AppController(ApplicationSession):
                 self.gameObject.heroes.change_heroes(msg2)
 
         self.subscription = await self.subscribe(on_event, self.subscriptionString)
-        self.gameObject = Game(self.game_version, self.debugMode)
+        self.gameObject = Game(self.game_version, self.debug_mode)
         self.publish(self.subscriptionString, "Hello")
         await asyncio.sleep(.5)
         while True:
@@ -71,7 +89,7 @@ class AppController(ApplicationSession):
 
     # supplementary functions
     def create_hero_references(self):
-        this_game_object = Game(self.game_version, self.debugMode)
+        this_game_object = Game(self.game_version, self.debug_mode)
 
         reference_string = [
             'Reference\\HeroImageList.txt',
@@ -98,7 +116,7 @@ class AppController(ApplicationSession):
         print("Done")
 
     def create_images_for_hero_reference(self):
-        this_game_object = Game(self.game_version, self.debugMode)
+        this_game_object = Game(self.game_version, self.debug_mode)
         screen_img_array = this_game_object.get_screen()
         current_view = this_game_object.map.main(screen_img_array, "for_reference")
         hero_range = {"Hero Select": 7, "Tab": 13}
@@ -109,7 +127,7 @@ class AppController(ApplicationSession):
         print("Done")
 
     def create_images_for_map_reference_hero_select(self):
-        this_game_object = Game(self.game_version, self.debugMode)
+        this_game_object = Game(self.game_version, self.debug_mode)
         screen_img_array = this_game_object.get_screen()
         this_game_object.map.currentImageArray = this_game_object.map.get_map(
             screen_img_array, "Hero Select", lijiang=False)  # , threshold_balance=True)
@@ -117,14 +135,14 @@ class AppController(ApplicationSession):
         print("Done")
 
     def create_images_for_map_reference_tab(self):
-        this_game_object = Game(self.game_version, self.debugMode)
+        this_game_object = Game(self.game_version, self.debug_mode)
         screen_img_array = this_game_object.get_screen()
         this_game_object.map.currentImageArray = this_game_object.map.get_map(screen_img_array, "Tab", lijiang=False)
         this_game_object.map.save_debug_data("for_reference")
         print("Done")
 
     def create_images_for_map_reference_objective(self):
-        this_game_object = Game(self.game_version, self.debugMode)
+        this_game_object = Game(self.game_version, self.debug_mode)
         screen_img_array = this_game_object.get_screen()
         this_game_object.map.current_map[0] = self.this_map
         this_game_object.map.currentMapSide = self.this_side
@@ -167,7 +185,7 @@ class AppController(ApplicationSession):
 
     def create_digit_images(self):
         sp.call('cls', shell=True)
-        this_game_object = Game(self.game_version, self.debugMode)
+        this_game_object = Game(self.game_version, self.debug_mode)
         screen_img_array = this_game_object.get_screen()
         this_game_object.gameTime.main(screen_img_array, "reference")
         print("Done")
