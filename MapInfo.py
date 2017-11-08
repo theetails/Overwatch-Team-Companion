@@ -703,7 +703,7 @@ class MapInfo(GameObject):
         if self.competitive:
             competitive_string = "competitive"
         else:
-            competitive_string = "competitive"
+            competitive_string = "quick"
         cropped_image_array = self.cut_image(img_array, self.dimensions["game_end"][competitive_string])
 
         if mode == "for_reference":
