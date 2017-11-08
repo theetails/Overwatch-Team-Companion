@@ -942,8 +942,8 @@ class MapInfo(GameObject):
                     "normal": {
                         'start_x': 952,
                         'end_x': 968,
-                        'start_y': 78,
-                        'end_y': 102
+                        'start_y': 118,
+                        'end_y': 142
                     },
                     "locked": {
                         'start_x': 952,
@@ -963,8 +963,8 @@ class MapInfo(GameObject):
                         "lock": {
                             "start_x": 953,
                             "end_x": 965,
-                            "start_y": 110,
-                            "end_y": 124
+                            "start_y": 111,
+                            "end_y": 125
                         },
                         "progress_bar": {
                             "escort": {
