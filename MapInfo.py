@@ -86,11 +86,6 @@ class MapInfo(GameObject):
                 self.check_competitive = True
             else:
                 this_view = False
-
-                # TODO check if removable
-                # if (self.thisMapPotential < self.imageThreshold[this_view]) and self.debugMode:
-                # self.save_debug_data(current_time)
-
         return this_view
 
     def reset_objective_progress(self):
@@ -306,7 +301,8 @@ class MapInfo(GameObject):
         # print(blue)
         if red > 245 and green < 230 and blue < 240:
             this_side = "offense"
-        elif (blue > 230 and green > 170 and red < 205 and int(green) - int(red) > 40) or (red >= 245 and green >= 250 and blue >= 250):
+        elif (blue > 230 and green > 170 and red < 205 and int(green) - int(red) > 40) or \
+                (red >= 245 and green >= 250 and blue >= 250):
             # blue/teal or white
             this_side = "defense"
         else:
@@ -369,8 +365,12 @@ class MapInfo(GameObject):
             new_image_array = self.identify_control_objective_progress(img_array, mode)
 
         if self.objectiveProgress["currentType"] == "escort":
-            # TODO don't check competitive in Tab view
             new_image_array = self.identify_escort_objective_progress(img_array, map_type, current_view, mode)
+
+        # if after Hero Select / Tab view
+        if self.competitive_confirmed and self.check_competitive:
+            # TODO if yes, grab current score
+            print("Get Competitive Score")
 
         if mode == "for_reference" and new_image_array is not None:
             path = "Debug"
@@ -468,7 +468,8 @@ class MapInfo(GameObject):
             if not self.competitive_confirmed and loop_count == 0:
                 self.competitive = not self.competitive
                 print("Try Competitive: " + str(self.competitive))
-                new_image_array = self.identify_assault_objective_progress(img_array, map_type, current_view, mode, loop_count=1)
+                new_image_array = self.identify_assault_objective_progress(
+                    img_array, map_type, current_view, mode, loop_count=1)
             else:
                 if loop_count == 1:
                     self.competitive = not self.competitive
@@ -486,7 +487,8 @@ class MapInfo(GameObject):
         img_copy = img_array.copy()
         img_copy.setflags(write=1)
         fail_count = 0
-        for percent, pixelCoordinates in enumerate(self.assaultPixelsToCheck[map_type][competitive_string][point_number]):
+        for percent, pixelCoordinates in \
+                enumerate(self.assaultPixelsToCheck[map_type][competitive_string][point_number]):
             x_coordinate = pixelCoordinates[0]
             y_coordinate = pixelCoordinates[1]
             # if self.competitive:
@@ -511,7 +513,8 @@ class MapInfo(GameObject):
                     break
 
             if mode != "standard":
-                print(str(percent) + " " + str(self.currentMapSide == pixel_side) + " " + str([x_coordinate, y_coordinate]) + str(this_pixel))
+                print(str(percent) + " " + str(self.currentMapSide == pixel_side) + " " +
+                      str([x_coordinate, y_coordinate]) + str(this_pixel))
 
             img_copy[y_coordinate][x_coordinate][0] = debug_color
             img_copy[y_coordinate][x_coordinate][1] = debug_color
@@ -711,7 +714,6 @@ class MapInfo(GameObject):
                     if mode == "for_reference":
                         box_end = X
                         print(str(box_beginning) + " " + str(box_end))
-                    # TODO if yes, grab current score
                     return True
                 else:
                     box_beginning = 0
@@ -720,10 +722,8 @@ class MapInfo(GameObject):
             if mode == "for_reference":
                 box_end = X
                 print(str(box_beginning) + " " + str(box_end))
-            # TODO if yes, grab current score
             return True
         return False
-        # TODO make sure this is done infrequently, such as only after a tab or hero select
 
     def identify_game_end(self, img_array, mode="standard"):
         print("Identify Game End")
