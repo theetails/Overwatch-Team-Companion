@@ -36,7 +36,7 @@ class TimeInfo(GameObject):
         digits_after_colon = 0
 
         # digit_requirement = 79  # Don't need? If its not a colon, it must be a digit
-        colon_requirement = 30
+        colon_requirement = 27
 
         dimensions = self.digitDimensions.copy()
         loop_count = 0
