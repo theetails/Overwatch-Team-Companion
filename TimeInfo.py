@@ -15,7 +15,7 @@ class TimeInfo(GameObject):
         self.digitDimensions = {
             "start_x": 106,
             "end_x": 114,
-            "start_y": 59,
+            "start_y": 60,
             "end_y": 71
         }
         self.game_datetime = datetime.min
