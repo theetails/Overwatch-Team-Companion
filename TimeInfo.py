@@ -100,11 +100,11 @@ class TimeInfo(GameObject):
         if time_string[1] == ":" or time_string[2] == ":":  # assume correct read
             try:
                 this_time_formatted = datetime.strptime(time_string, "%M:%S")
+                self.game_datetime = this_time_formatted
+                print("Game Time: " + datetime.strftime(this_time_formatted, "%M:%S"))
+                self.newly_verified_game_time = True
             except ValueError:
                 print("Time Not Right")
-            self.game_datetime = this_time_formatted
-            print("Game Time: " + datetime.strftime(this_time_formatted, "%M:%S"))
-            self.newly_verified_game_time = True
 
             # self.correct_round_start_time(system_time, time_string)
 
