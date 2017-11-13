@@ -67,6 +67,8 @@ class MapInfo(GameObject):
 
         self.assaultReference = self.read_references("Reference\\ObjectiveListAssault.txt")
         self.controlReference = self.read_references("Reference\\ObjectiveListControl.txt")
+        full_digit_references = self.read_references("Reference\\DigitImageList.txt")
+        self.digitReferences = {new_key: full_digit_references[new_key] for new_key in {"0", "1", "2"}}
         self.gameEndReference = self.read_references("Reference\\GameEnd.txt")
 
         self.dimensions = self.dimensions_from_version()
@@ -96,7 +98,8 @@ class MapInfo(GameObject):
         self.objectiveProgress = {
             "currentType": None,
             "gameEnd": False,
-            "gameOver": False
+            "gameOver": False,
+            "unlocked": False
         }
 
         map_type = self.map_type()
@@ -108,7 +111,6 @@ class MapInfo(GameObject):
             self.objectiveProgress["controlProgress"] = [None, None, None, None]
         if map_type == "escort" or map_type == "transition":
             self.objectiveProgress["escortProgress"] = []
-            self.objectiveProgress["unlocked"] = False
 
     def calculate_assault_progress_pixels(self):
         assault_radius = 23  # px
@@ -367,11 +369,6 @@ class MapInfo(GameObject):
         if self.objectiveProgress["currentType"] == "escort":
             new_image_array = self.identify_escort_objective_progress(img_array, map_type, current_view, mode)
 
-        # if after Hero Select / Tab view
-        if self.competitive_confirmed and self.check_competitive:
-            # TODO if yes, grab current score
-            print("Get Competitive Score")
-
         if mode == "for_reference" and new_image_array is not None:
             path = "Debug"
             # save image
@@ -383,10 +380,8 @@ class MapInfo(GameObject):
             self.competitive = self.identify_competitive(img_array, self.currentMapSide, mode)
             self.check_competitive = False
             print("Competitive: " + str(self.competitive))
-        if self.competitive:
-            competitive_string = "competitive"
-        else:
-            competitive_string = "quick"
+
+        competitive_string = self.get_competitive_string()
 
         check_game_end = True
         new_image_array = None
@@ -426,6 +421,7 @@ class MapInfo(GameObject):
                     else:
                         check_assault_point2 = True
                 elif this_status != "Locked":
+                    self.objectiveProgress["unlocked"] = True
                     self.identify_assault_point_progress(img_array, map_type, competitive_string, 0, mode)
                 else:
                     check_assault_point2 = True
@@ -463,7 +459,10 @@ class MapInfo(GameObject):
                 check_game_end = False
                 self.competitive_confirmed = True
                 if this_status != "Locked":
+                    self.objectiveProgress["unlocked"] = True
                     self.identify_assault_point_progress(img_array, map_type, competitive_string, 1, mode)
+                else:
+                    self.objectiveProgress["unlocked"] = False
         if check_game_end:
             if not self.competitive_confirmed and loop_count == 0:
                 self.competitive = not self.competitive
@@ -534,6 +533,7 @@ class MapInfo(GameObject):
         new_image_array = self.cut_and_threshold(img_array, self.dimensions["control"]["normal"])
         objective_identified = self.identify_control_core(img_array, new_image_array, pixel_current_height,
                                                           pixel_side_height, reference, status_addendum)
+        self.objectiveProgress["unlocked"] = True
 
         if objective_identified is False:
             # check if locked between rounds
@@ -555,6 +555,8 @@ class MapInfo(GameObject):
                                                                   pixel_side_height, reference, status_addendum)
                 if objective_identified is False:
                     self.identify_game_end(img_array, mode)
+            else:
+                self.objectiveProgress["unlocked"] = False
 
         return new_image_array
 
@@ -562,6 +564,7 @@ class MapInfo(GameObject):
                               status_addendum):
         this_side = "neither"
 
+        competitive_progress = False
         our_progress = 0
         their_progress = 0
 
@@ -582,7 +585,19 @@ class MapInfo(GameObject):
             if this_status not in ["Locked", "Prepare"]:
                 this_side = self.team_from_pixel(pixel_to_check["current"])
                 print("Current Controller: " + this_side)
-            if not self.competitive:
+
+            if (self.objectiveProgress["controlProgress"][1] is None and this_status != "Prepare") or \
+                            this_status == "Locked":
+                print("execute identify_control_competitive_progress")
+                competitive_progress = self.identify_control_competitive_progress(img_array)
+
+            if self.competitive and competitive_progress is not False:
+                our_progress = competitive_progress[0]
+                their_progress = competitive_progress[1]
+            elif self.competitive:
+                our_progress = self.objectiveProgress["controlProgress"][1]
+                their_progress = self.objectiveProgress["controlProgress"][2]
+            else:
                 for pixelIndex, thisPixel in pixel_to_check["left"].items():
                     team_result = self.team_from_pixel(thisPixel)
                     if team_result == "neither":
@@ -596,7 +611,6 @@ class MapInfo(GameObject):
             if self.objectiveProgress["controlProgress"][1] != our_progress or \
                     self.objectiveProgress["controlProgress"][2] != their_progress:
                 print("Game Progress | Us: " + str(our_progress) + "   Them: " + str(their_progress))
-            print("Game Progress | Us: " + str(our_progress) + "   Them: " + str(their_progress))
 
             this_status = this_status + status_addendum
             if this_status != self.objectiveProgress["controlProgress"][0]:
@@ -606,15 +620,48 @@ class MapInfo(GameObject):
         else:
             return False
 
+    def identify_control_competitive_progress(self, img_array, mode="standard"):
+        offense_found, offense_result = self.identify_control_competitive_side_progress(img_array, "offense", mode)
+        defense_found, defense_result = self.identify_control_competitive_side_progress(img_array, "defense", mode)
+
+        self.check_competitive = False
+        self.competitive_confirmed = True
+        if offense_found and defense_found:
+            print("Competitive")
+            self.competitive = True
+            return [offense_result, defense_result]
+        else:
+            print("Not Competitive")
+            return False
+
+    def identify_control_competitive_side_progress(self, img_array, team_side, mode="standard"):
+        dimensions = self.dimensions["control"]["competitive"][team_side + "_score"]
+        new_image_array = self.cut_image(img_array, dimensions)
+        img = Image.fromarray(new_image_array)
+        scaled_image_array = self.threshold(np.asarray((img.resize((8, 11), Image.BILINEAR))))
+
+        if self.debugMode:
+            # save image
+            path = "Debug"
+            img = Image.fromarray(scaled_image_array)
+            img.save(path + "\\Potential Competitive " + team_side + " Score.png", "PNG")
+
+        potential = self.what_image_is_this(scaled_image_array, self.digitReferences)
+        this_status = max(potential.keys(), key=(lambda k: potential[k]))
+        # print(potential[this_status])
+        if potential[this_status] > 70:
+            # print(team_side + " score: " + this_status)
+            return True, this_status
+        else:
+            return False, False
+
     def identify_escort_objective_progress(self, img_array, map_type, current_view, mode="standard"):
         if self.check_competitive and current_view != "Tab":
             self.competitive = self.identify_competitive(img_array, self.currentMapSide, mode)
             self.check_competitive = False
             print("Competitive: " + str(self.competitive))
-        if self.competitive:
-            competitive_string = "competitive"
-        else:
-            competitive_string = "quick"
+
+        competitive_string = self.get_competitive_string()
 
         if map_type == "escort" and self.objectiveProgress["unlocked"] is False:
             # check for lock symbol
@@ -697,6 +744,12 @@ class MapInfo(GameObject):
 
         return new_image_array
 
+    def get_competitive_string(self):
+        if self.competitive:
+            return "competitive"
+        else:
+            return "quick"
+
     def identify_competitive(self, img_array, team_side, mode="standard"):
         # check to see if there is a red or blue box (depending on team)
         box_beginning = 0
@@ -727,10 +780,7 @@ class MapInfo(GameObject):
 
     def identify_game_end(self, img_array, mode="standard"):
         print("Identify Game End")
-        if self.competitive:
-            competitive_string = "competitive"
-        else:
-            competitive_string = "quick"
+        competitive_string = self.get_competitive_string()
         cropped_image_array = self.cut_image(img_array, self.dimensions["game_end"][competitive_string])
 
         if mode == "for_reference":
@@ -1123,6 +1173,20 @@ class MapInfo(GameObject):
                         'end_x': 968,
                         'start_y': 147,
                         'end_y': 171
+                    },
+                    "competitive": {
+                        "offense_score": {
+                            'start_x': 802,
+                            'end_x': 818,
+                            'start_y': 88,
+                            'end_y': 111
+                        },
+                        "defense_score": {
+                            'start_x': 1096,
+                            'end_x': 1112,
+                            'start_y': 88,
+                            'end_y': 111
+                        }
                     }
                 },
                 "escort": {
@@ -1203,16 +1267,31 @@ class MapInfo(GameObject):
                     }
                 },
                 'competitive': {
-                    'offense': {
-                        'start_x': 760,
-                        'end_x': 880,
-                        'y': 100
+                    'standard': {
+                        'offense': {
+                            'start_x': 760,
+                            'end_x': 880,
+                            'y': 100
+                        },
+                        'defense': {
+                            'start_x': 1030,
+                            'end_x': 1180,
+                            'y': 100
+                        }
                     },
-                    'defense': {
-                        'start_x': 1030,
-                        'end_x': 1180,
-                        'y': 100
+                    'control': {
+                        'offense': {
+                            'start_x': 783,
+                            'end_x': 841,
+                            'y': 117
+                        },
+                        'defense': {
+                            'start_x': 1077,
+                            'end_x': 1135,
+                            'y': 117
+                        }
                     }
+
                 },
                 'game_end': {
                     'quick': {
