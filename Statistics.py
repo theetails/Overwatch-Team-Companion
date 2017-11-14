@@ -1,16 +1,36 @@
 from datetime import datetime, timedelta
 import json
+import requests
 # import copy
 
 
 class Statistics:
-    def __init__(self, debug_mode):
+    def __init__(self, debug_mode=True):
         self.debug_mode = debug_mode
         self.snapshots = []
         self.round_start_time = []
         self.new_round = False
         self.previous_time = None
         self.temporary_round_start = False
+
+        '''
+        objectiveProgress = {
+            "currentType": None,
+            "gameEnd": False,
+            "gameOver": False,
+            "unlocked": False
+            
+            # Assault & Transition
+            "assaultPoint": False
+            "assaultPointProgress": None
+            
+            # Escort & Transition
+            "escortProgress": []
+            
+            # Control
+            "controlProgress": [this_status, our_progress, their_progress, this_side]
+        }            
+        '''
 
     def add_snapshot(self, heroes, current_map, map_side, objective_progress, game_time, current_system_time):
         self.snapshots.append(
@@ -30,14 +50,9 @@ class Statistics:
         if "controlProgress" in latest_snapshot.objective_progress:
             if latest_snapshot.objective_progress["controlProgress"][0] not in [None, "Prepare"]:
                 safe_to_adjust = True
-        else:
+        elif latest_snapshot.objective_progress["unlocked"]:
+            # Assault, Escort, Transition
             safe_to_adjust = True
-
-        # TODO Escort
-
-        # TODO Assault
-
-        # TODO Assault/Escort
 
         if latest_snapshot.game_time["verified"] and safe_to_adjust:
             current_game_time = latest_snapshot.game_time["datetime"]
@@ -101,11 +116,18 @@ class Statistics:
                         self.temporary_round_start = True
                     else:
                         current_game_time = self.previous_time
-                # TODO Escort
-
-                # TODO Assault
-
-                # TODO Assault/Escort
+                elif self.snapshots[-2].objective_progress["unlocked"]:
+                    # Assault, Escort, Transition
+                    current_game_time = self.previous_time
+                    game_time_delta = timedelta(
+                        minutes=self.previous_time.minute,
+                        seconds=self.previous_time.second)
+                    calculated_round_start_time = latest_snapshot.system_time - game_time_delta
+                    self.round_start_time.append({
+                        "start_time": calculated_round_start_time,
+                        "game_time": self.previous_time
+                    })
+                    self.temporary_round_start = True
             elif latest_snapshot.game_time["verified"]:
                 self.previous_time = latest_snapshot.game_time["datetime"]
                 current_game_time = self.previous_time
@@ -220,18 +242,28 @@ class Statistics:
         self.save_shapshots_for_debugging()
         self.correct_snapshots()
 
+        snapshot_list = []
+
         if self.snapshots is not None:
             path = "Debug"
             current_time_string = datetime.strftime(current_time, "%m-%d-%y %H-%M-%S")
             debug_file = open(path + "\\Statistics Corrected " + current_time_string + ".txt", 'w')
             for snapshot in self.snapshots:
                 snapshot_values = snapshot.output_all()
+                snapshot_list.append(snapshot_values)
                 for snapshot_value in snapshot_values:
                     line_to_write = str(snapshot_value) + '\n'
                     debug_file.write(line_to_write)
                 debug_file.write('\n')
+            snapshot_list.append({
+                "Game End": game_end,
+                "Game End Time": current_time_string
+            })
             debug_file.write(game_end + '\n')
             debug_file.write(current_time_string + '\n')
+
+            json_string = json.dumps(snapshot_list)
+            requests.post("http://voxter.mooo.com:1080/snapshot", data=json_string)
 
     def save_shapshots_for_debugging(self):
         snapshot_output_list = []
@@ -239,6 +271,14 @@ class Statistics:
             snapshot_output_list.append(snapshot.output_all())
         with open("Debug\\Snapshot.txt", 'w') as file:
             json.dump(snapshot_output_list, file)
+
+    @staticmethod
+    def send_saved_snapshot():
+        with open("Debug\\Snapshot.txt", 'r') as file_data:
+            json_data = json.loads(file_data.read())
+            print(json_data)
+            response = requests.post("http://overwatch.app/snapshot", json=json_data)
+            print(response.text)
 
 
 class SnapShot:
@@ -262,3 +302,9 @@ class SnapShot:
             self.objective_progress
         ]
         return array
+
+
+if __name__ == "__main__":
+    this = Statistics()
+    this.send_saved_snapshot()
+    
