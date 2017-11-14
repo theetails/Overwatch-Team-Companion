@@ -23,4 +23,5 @@ dependencies:
 - pip:
   - easyprocess==0.2.3
   - pyscreenshot==0.4.2
+  - requests==2.14.2
 
