@@ -1267,31 +1267,16 @@ class MapInfo(GameObject):
                     }
                 },
                 'competitive': {
-                    'standard': {
-                        'offense': {
-                            'start_x': 760,
-                            'end_x': 880,
-                            'y': 100
-                        },
-                        'defense': {
-                            'start_x': 1030,
-                            'end_x': 1180,
-                            'y': 100
-                        }
+                    'offense': {
+                        'start_x': 760,
+                        'end_x': 880,
+                        'y': 100
                     },
-                    'control': {
-                        'offense': {
-                            'start_x': 783,
-                            'end_x': 841,
-                            'y': 117
-                        },
-                        'defense': {
-                            'start_x': 1077,
-                            'end_x': 1135,
-                            'y': 117
-                        }
+                    'defense': {
+                        'start_x': 1030,
+                        'end_x': 1180,
+                        'y': 100
                     }
-
                 },
                 'game_end': {
                     'quick': {
