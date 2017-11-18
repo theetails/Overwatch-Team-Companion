@@ -490,17 +490,9 @@ class MapInfo(GameObject):
                 enumerate(self.assaultPixelsToCheck[map_type][competitive_string][point_number]):
             x_coordinate = pixelCoordinates[0]
             y_coordinate = pixelCoordinates[1]
-            # if self.competitive:
-            #     y_coordinate += 2
-            # if self.map_type() == "assault" and point_number == 1:
-            #     x_coordinate += 4
             this_pixel = img_array[y_coordinate][x_coordinate]
-            # 1.16
-            # avg_color_brightness = reduce(lambda x, y: int(x) + int(y), this_pixel[:3]) / 3
-            # if avg_color_brightness > 248:
             debug_color = 0
             pixel_side = self.team_from_pixel_assault_circle(this_pixel, opposite=True)
-            # if this_pixel[0] >= 230:
             assault_percent_complete = assault_percent_complete + 1
             if self.currentMapSide == pixel_side:
                 debug_color = 255
@@ -526,7 +518,7 @@ class MapInfo(GameObject):
             img.save("Debug\\Assault Progress.png", "PNG")
 
     def identify_control_objective_progress(self, img_array, mode="standard"):
-        pixel_current_height = 118  # 1.16 108
+        pixel_current_height = 118
         pixel_side_height = 91
         reference = self.controlReference
         status_addendum = ""
@@ -975,155 +967,6 @@ class MapInfo(GameObject):
 
     def dimensions_from_version(self):
         dimensions = {
-            "1.16": {
-                "assault": {
-                    "quick": {
-                        "point1": {
-                            "start_x": 918,
-                            "end_x": 930,
-                            "start_y": 125,
-                            "end_y": 139
-                        },
-                        "point2": {
-                            "start_x": 994,
-                            "end_x": 1006,
-                            "start_y": 125,
-                            "end_y": 139
-                        }
-                    },
-                    "competitive": {
-                        "point1": {
-                            "start_x": 918,
-                            "end_x": 930,
-                            "start_y": 125,
-                            "end_y": 139
-                        },
-                        "point2": {
-                            "start_x": 994,
-                            "end_x": 1006,
-                            "start_y": 125,
-                            "end_y": 139
-                        }
-                    }
-                },
-                "control": {
-                    "normal": {
-                        'start_x': 952,
-                        'end_x': 968,
-                        'start_y': 118,
-                        'end_y': 142
-                    },
-                    "locked": {
-                        'start_x': 952,
-                        'end_x': 968,
-                        'start_y': 115,
-                        'end_y': 139
-                    },
-                    "overtime": {
-                        'start_x': 952,
-                        'end_x': 968,
-                        'start_y': 133,
-                        'end_y': 157
-                    }
-                },
-                "escort": {
-                    "quick": {
-                        "lock": {
-                            "start_x": 953,
-                            "end_x": 965,
-                            "start_y": 111,
-                            "end_y": 125
-                        },
-                        "progress_bar": {
-                            "start_x": 787,
-                            "end_x": 1135,
-                            "start_y": 120,
-                            "end_y": 130
-                        },
-                    },
-                    'competitive': {
-                        'lock': {
-                            "start_x": 953,
-                            "end_x": 965,
-                            "start_y": 123,
-                            "end_y": 137
-                        },
-                        "progress_bar": {
-                            "start_x": 787,
-                            "end_x": 1135,
-                            "start_y": 132,
-                            "end_y": 142
-                        }
-                    }
-                },
-                "transition": {
-                    "quick": {
-                        "point1": {
-                            "start_x": 918,
-                            "end_x": 930,
-                            "start_y": 125,
-                            "end_y": 139
-                        },
-                        "done": {
-                            "start_x": 760,
-                            "end_x": 772,
-                            "start_y": 125,
-                            "end_y": 139
-                        },
-                        "progress_bar": {
-                            "start_x": 824,
-                            "end_x": 1172,
-                            "start_y": 120,
-                            "end_y": 130
-                        }
-                    },
-                    "competitive": {
-                        "point1": {
-                            "start_x": 760,
-                            "end_x": 772,
-                            "start_y": 125,
-                            "end_y": 139
-                        },
-                        "done": {
-                            "start_x": 760,
-                            "end_x": 772,
-                            "start_y": 125,
-                            "end_y": 139
-                        },
-                        "progress_bar": {
-                            "start_x": 824,
-                            "end_x": 1172,
-                            "start_y": 132,
-                            "end_y": 142
-                        }
-                    }
-                },
-                'competitive': {
-                    'offense': {
-                        'start_x': 760,
-                        'end_x': 880,
-                        'y': 84
-                    }, 'defense': {
-                        'start_x': 1030,
-                        'end_x': 1180,
-                        'y': 84
-                    }
-                },
-                'game_end': {
-                    'quick': {
-                        'start_x': 730,
-                        'end_x': 1200,
-                        'start_y': 270,
-                        'end_y': 410
-                    },
-                    'competitive': {
-                        'start_x': 643,
-                        'end_x': 1305,
-                        'start_y': 440,
-                        'end_y': 633
-                    }
-                }
-            },
             "1.17": {
                 "assault": {
                     "quick": {
