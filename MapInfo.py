@@ -14,7 +14,7 @@ class MapInfo(GameObject):
         "hanamura": "assault", "horizon lunar colony": "assault", "temple of anubis": "assault",
         "volskaya industries": "assault",
         # transition
-        "eichenwalde": "transition", "hollywood": "transition", "king's row": "transition", "numbani": "transition",
+        "blizzard world": "transition", "eichenwalde": "transition", "hollywood": "transition", "king's row": "transition", "numbani": "transition",
         # control
         "ilios": "control", "lijiang": "control", "nepal": "control", "oasis": "control",
         # escort
@@ -1041,13 +1041,11 @@ class MapInfo(GameObject):
                             "end_y": 144
                         },
                         "progress_bar": {
-                            "escort": {
-                                "start_x": 787,
-                                "end_x": 1135,
-                                "start_y": 137,
-                                "end_y": 148
-                            }
-                        },
+                            "start_x": 787,
+                            "end_x": 1135,
+                            "start_y": 137,
+                            "end_y": 148
+                        }
                     },
                     'competitive': {
                         'lock': {
@@ -1057,14 +1055,11 @@ class MapInfo(GameObject):
                             "end_y": 146
                         },
                         "progress_bar": {
-                            "escort": {
-                                "start_x": 787,
-                                "end_x": 1135,
-                                "start_y": 138,
-                                "end_y": 150
-                            }
+                            "start_x": 787,
+                            "end_x": 1135,
+                            "start_y": 138,
+                            "end_y": 150
                         }
-
                     }
                 },
                 "transition": {
