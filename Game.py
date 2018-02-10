@@ -3,6 +3,7 @@ import numpy as np
 from datetime import datetime
 import subprocess as sp
 import copy
+import time
 
 from Statistics import Statistics
 from AllHeroes import AllHeroes
@@ -21,6 +22,8 @@ class Game:
         self.game_over = True
 
     def main(self, broadcaster):
+        start_time = time.time()
+
         sleep_time = None
         current_time = datetime.now()
         current_time_string = datetime.strftime(current_time, "%m-%d-%y %H-%M-%S")
@@ -63,7 +66,7 @@ class Game:
                 sleep_time = 1
 
         else:
-            sleep_time = 0.5
+            sleep_time = 0
             if self.game_over is False:
                 self.map.identify_objective_progress(screen_img_array)
 
@@ -81,7 +84,11 @@ class Game:
                 self.statistics.add_snapshot(self.heroes.heroesList, self.map.get_current_map(),
                                              self.map.currentMapSide, copy.deepcopy(self.map.get_objective_progress()),
                                              self.gameTime.get_verified_game_time(current_time), current_time)
-
+        time_difference = time.time() - start_time
+        if time_difference < 0.5:
+            sleep_time = 0.5 - time_difference
+        else:
+            sleep_time = 0
         return sleep_time
 
     @staticmethod
