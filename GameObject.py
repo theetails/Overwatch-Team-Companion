@@ -63,16 +63,24 @@ class GameObject:
         # captured_image_string = str(captured_image_list)
         # captured_image_pixels = captured_image_string.split('],')
 
+        total = {}
+
         for item_name, reference_image in reference_images_dictionary.items():
+            total[item_name] = 0
             row = 0
-            for reference_row in reference_image:
+            for reference_row in reference_image:  # captured_image must not be larger than any reference image
                 pixel = 0
                 for reference_pixel in reference_row:
+                    total[item_name] += 1
                     # print("Reference Pixel: " + str(reference_pixel) +
-                        # " Captured Pixel: " + str(captured_image_list[row][pixel][0]))
+                    #     " Captured Pixel: " + str(captured_image_list[row][pixel][0]))
                     if reference_pixel == captured_image_list[row][pixel][0]:
                         matched_array.append(item_name)
                     pixel = pixel + 1
                 row = row + 1
-        count = Counter(matched_array)
-        return count
+        counter = Counter(matched_array)
+        most_common = counter.most_common()
+        ratios = {}
+        for item in most_common:
+            ratios[item[0]] = item[1] / total[item[0]]
+        return ratios

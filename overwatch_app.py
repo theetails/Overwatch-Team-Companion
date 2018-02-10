@@ -74,6 +74,8 @@ class AppController(ApplicationSession):
                 self.gameObject.map.broadcast_options(self)
             elif msg1 == "heroes":
                 self.gameObject.heroes.change_heroes(msg2)
+            elif msg1 == "options":
+                self.gameObject.map.currentMapSide = msg2[0]
 
         self.subscription = await self.subscribe(on_event, self.subscriptionString)
         self.gameObject = Game(self.game_version, self.debug_mode)
@@ -130,14 +132,14 @@ class AppController(ApplicationSession):
         this_game_object = Game(self.game_version, self.debug_mode)
         screen_img_array = this_game_object.get_screen()
         this_game_object.map.currentImageArray = this_game_object.map.get_map(
-            screen_img_array, "Hero Select", lijiang=False)  # , threshold_balance=True)
+            screen_img_array, "Hero Select", section='extended')  # , threshold_balance=True)
         this_game_object.map.save_debug_data("for_reference")
         print("Done")
 
     def create_images_for_map_reference_tab(self):
         this_game_object = Game(self.game_version, self.debug_mode)
         screen_img_array = this_game_object.get_screen()
-        this_game_object.map.currentImageArray = this_game_object.map.get_map(screen_img_array, "Tab", lijiang=False)
+        this_game_object.map.currentImageArray = this_game_object.map.get_map(screen_img_array, "Tab", section='normal')
         this_game_object.map.save_debug_data("for_reference")
         print("Done")
 
@@ -157,6 +159,7 @@ class AppController(ApplicationSession):
             'Reference\\MapImageHighThreshold.txt',
             'Reference\\MapImageListLijiang.txt',
             'Reference\\MapImageListTab.txt',
+            'Reference\\MapImageListGameType.txt',
             'Reference\\ObjectiveListAssault.txt',
             'Reference\\ObjectiveListControl.txt',
             'Reference\\GameEnd.txt'
@@ -166,6 +169,7 @@ class AppController(ApplicationSession):
             "Reference\\Map Name Image Sources High Threshold",
             "Reference\\Lijiang Map Name Image Sources",
             "Reference\\Map Name Tab Image Sources",
+            "Reference\\Map Game Type Image Sources",
             "Reference\\Objective-Assault Sources",
             "Reference\\Objective-Control Sources",
             "Reference\\Game End Sources"]
@@ -237,7 +241,7 @@ class AppController(ApplicationSession):
 
 def main_function():
     sp.call('cls', shell=True)
-    runner = ApplicationRunner(url="ws://voxter.mooo.com:8080/ws", realm="com.voxter.teambuilder")
+    runner = ApplicationRunner(url="wss://overwatch.johnelgin.me:8080/ws", realm="com.voxter.teambuilder")
     runner.run(AppController)
 
 

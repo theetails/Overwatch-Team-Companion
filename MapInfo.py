@@ -14,17 +14,18 @@ class MapInfo(GameObject):
         "hanamura": "assault", "horizon lunar colony": "assault", "temple of anubis": "assault",
         "volskaya industries": "assault",
         # transition
-        "blizzard world": "transition", "eichenwalde": "transition", "hollywood": "transition", "king's row": "transition", "numbani": "transition",
+        "blizzard world": "transition", "eichenwalde": "transition", "hollywood": "transition",
+        "king's row": "transition", "numbani": "transition",
         # control
         "ilios": "control", "lijiang": "control", "nepal": "control", "oasis": "control",
         # escort
         "dorado": "escort", "junkertown": "escort", "route66": "escort", "watchpoint gibraltar": "escort",
         # arena
-        "black forest": "arena", "castillo": "arena", "chateau guillard": "arena", "ecopoint antarctica": "arena",
-        "ilios lighthouse": "arena", "ilios ruins": "arena", "ilios well": "arena", "lijiang control center": "arena",
-        "lijiang garden": "arena", "lijiang night market": "arena", "necropolis": "arena", "nepal sanctum": "arena",
-        "nepal shrine": "arena", "nepal village": "arena", "oasis city center": "arena", "oasis gardens": "arena",
-        "oasis university": "arena"
+        "ayutthaya": "arena", "black forest": "arena", "castillo": "arena", "chateau guillard": "arena",
+        "ecopoint antarctica": "arena", "ilios lighthouse": "arena", "ilios ruins": "arena", "ilios well": "arena",
+        "lijiang control center": "arena", "lijiang garden": "arena", "lijiang night market": "arena",
+        "necropolis": "arena", "nepal sanctum": "arena", "nepal shrine": "arena", "nepal village": "arena",
+        "oasis city center": "arena", "oasis gardens": "arena", "oasis university": "arena"
     }
     current_map = [None]
     currentMapSide = "offense"
@@ -39,13 +40,17 @@ class MapInfo(GameObject):
     previousImageArray = None
     previousPotential = None
 
+    game_mode = None
+    previous_game_mode = None
+
     imageThreshold = {
-        "Hero Select": 1875,
-        "Tab": 1850,  # was 1710
-        "Assault": 135,
-        "Control": 270,  # max 384, lower limit: 250
-        "Victory": 6450,
-        "Defeat": 5800
+        "Hero Select": 0.95,  # 1875,
+        "Tab": 0.95,  # 1850, was 1710
+        "Assault": 0.95,  # 135,
+        "Control": 0.95,  # 270, max 384, lower limit: 250
+        "Victory": 0.95,  # 6400,
+        "Defeat": 0.95,  # 5800,
+        "Game Type": 0.95
     }
 
     def __init__(self, game_version, debug_mode):
@@ -62,7 +67,8 @@ class MapInfo(GameObject):
             "Hero Select": self.read_references("Reference\\MapImageList.txt"),
             "Tab": self.read_references("Reference\\MapImageListTab.txt"),
             "Lijiang": self.read_references("Reference\\MapImageListLijiang.txt"),
-            "High Threshold": self.read_references("Reference\\MapImageHighThreshold.txt")
+            "High Threshold": self.read_references("Reference\\MapImageHighThreshold.txt"),
+            "Game Type": self.read_references("Reference\\MapImageListGameType.txt")
         }
 
         self.assaultReference = self.read_references("Reference\\ObjectiveListAssault.txt")
@@ -161,8 +167,20 @@ class MapInfo(GameObject):
 
     def identify_map(self, screen_img_array, view):
         potential = None
+        section = "normal"
 
-        this_map_array = self.get_map(screen_img_array, view)
+        if view == "Hero Select":
+            this_mode_array = self.get_map(screen_img_array, view, section='game_type')
+            potential = self.what_image_is_this(this_mode_array, self.mapReferences['Game Type'])
+            this_game_mode = max(potential.keys(), key=(lambda k: potential[k]))
+            if potential[this_game_mode] > self.imageThreshold["Game Type"]:
+                self.previous_game_mode = self.game_mode
+                self.game_mode = this_game_mode
+                print(this_game_mode)
+                #  Hero Select Confirmed
+                section = "extended"
+
+        this_map_array = self.get_map(screen_img_array, view, section=section)
         potential = self.what_image_is_this(this_map_array, self.mapReferences[view])
         this_map = max(potential.keys(), key=(lambda k: potential[k]))
         self.previousImageArray = self.currentImageArray
@@ -173,7 +191,7 @@ class MapInfo(GameObject):
         if potential[this_map] > self.imageThreshold[view]:
             print(str(potential[this_map]) + " " + this_map)
             if this_map == "lijiang tower" and view == "Hero Select":
-                this_map_lijiang = self.get_map(screen_img_array, "Hero Select", lijiang=True)
+                this_map_lijiang = self.get_map(screen_img_array, "Hero Select", section='lijiang')
                 potential = self.what_image_is_this(this_map_lijiang, self.mapReferences["Lijiang"])
                 this_map_lijiang = max(potential.keys(), key=(lambda k: potential[k]))
                 this_map = "lijiang-" + this_map_lijiang
@@ -187,7 +205,7 @@ class MapInfo(GameObject):
             self.current_map = this_map_split
             return True
         elif view == "Hero Select":
-            this_map_array = self.get_map(screen_img_array, view, threshold_balance=True)
+            this_map_array = self.get_map(screen_img_array, view, section=section, threshold_balance=True)
             potential = self.what_image_is_this(this_map_array, self.mapReferences["High Threshold"])
             this_map = max(potential.keys(), key=(lambda k: potential[k]))
             if potential[this_map] > self.imageThreshold[view]:
@@ -219,32 +237,20 @@ class MapInfo(GameObject):
                 line_to_write = str(value) + ': ' + potentialMap + '\n'
                 debug_file.write(line_to_write)
 
-    def get_map(self, img_array, mode, lijiang=False, threshold_balance=False):
-        start_x = None
-        end_x = None
-        start_y = None
-        end_y = None
+    def get_map(self, img_array, view, section='normal', threshold_balance=False):
         scaled_image_array = None
 
-        if mode == "Hero Select":
-            start_x = 60
-            end_x = 290
-            if lijiang:
-                start_x = 294  # lijiang subsection
-                end_x = 420  # lijiang subsection
-            start_y = 168
-            end_y = 206
-        elif mode == "Tab":
-            start_x = 65
-            end_x = 220
-            start_y = 34
-            end_y = 47
-        map_image = img_array[start_y:end_y, start_x:end_x]
+        dimensions = self.dimensions['map'][view][section]
+
+        map_image = img_array[dimensions['start_y']:dimensions['end_y'], dimensions['start_x']:dimensions['end_x']]
         map_image_array = np.asarray(map_image)
 
-        if mode == "Hero Select":
-            scaled_image_array = imresize(map_image_array, (19, 115))
-        elif mode == "Tab":
+        if view == "Hero Select":
+            if section != 'game_type':
+                scaled_image_array = imresize(map_image_array, (19, 115))
+            else:
+                scaled_image_array = map_image_array
+        elif view == "Tab":
             scaled_image_array = map_image_array
 
         if not threshold_balance:
@@ -514,8 +520,9 @@ class MapInfo(GameObject):
         self.objectiveProgress["assaultPointProgress"] = assault_percent_complete
         print(assault_percent_complete)
         if self.debugMode:
+            path = "Debug"
             img = Image.fromarray(img_copy)
-            img.save("Debug\\Assault Progress.png", "PNG")
+            img.save(path + "\\Assault Progress.png", "PNG")
 
     def identify_control_objective_progress(self, img_array, mode="standard"):
         pixel_current_height = 118
@@ -528,29 +535,48 @@ class MapInfo(GameObject):
         self.objectiveProgress["unlocked"] = True
 
         if objective_identified is False:
+            # check if not controlled with a black background
+            inverted_image_array = self.invert_image_array(new_image_array)
+            objective_identified = self.identify_control_core(img_array, inverted_image_array, pixel_current_height,
+                                                              pixel_side_height, reference, status_addendum)
+
+        if objective_identified is False:
             # check if locked between rounds
             pixel_current_height = 145
             pixel_side_height = 128
             reference = {"Prepare": self.controlReference["Locked"]}
             status_addendum = ""
             new_image_array = self.cut_and_threshold(img_array, self.dimensions["control"]["locked"])
-            objective_identified = self.identify_control_core(img_array, new_image_array, pixel_current_height,
+            inverted_image_array = self.invert_image_array(new_image_array)
+            objective_identified = self.identify_control_core(img_array, inverted_image_array, pixel_current_height,
                                                               pixel_side_height, reference, status_addendum)
-            if objective_identified is False:
-                # check for overtime
-                pixel_current_height = 163
-                pixel_side_height = 146
-                reference = self.controlReference
-                status_addendum = "-Overtime"
-                new_image_array = self.cut_and_threshold(img_array, self.dimensions["control"]["overtime"])
-                objective_identified = self.identify_control_core(img_array, new_image_array, pixel_current_height,
-                                                                  pixel_side_height, reference, status_addendum)
-                if objective_identified is False:
-                    self.identify_game_end(img_array, mode)
-            else:
-                self.objectiveProgress["unlocked"] = False
+        if objective_identified is False:
+            # check for overtime
+            pixel_current_height = 163
+            pixel_side_height = 146
+            reference = self.controlReference
+            status_addendum = "-Overtime"
+            new_image_array = self.cut_and_threshold(img_array, self.dimensions["control"]["overtime"])
+            objective_identified = self.identify_control_core(img_array, new_image_array, pixel_current_height,
+                                                          pixel_side_height, reference, status_addendum)
+        if objective_identified is False:
+            self.identify_game_end(img_array, mode)
+        else:
+            self.objectiveProgress["unlocked"] = False
 
         return new_image_array
+
+    @staticmethod
+    def invert_image_array(image_array):
+        new_array = image_array.copy()
+        new_array.setflags(write=1)
+        for row_index, row in enumerate(image_array):
+            for pixel_index, pixel in enumerate(row):
+                if pixel[0] == 0:
+                    new_array[row_index][pixel_index] = [255, 255, 255]
+                else:
+                    new_array[row_index][pixel_index] = [0, 0, 0]
+        return new_array
 
     def identify_control_core(self, img_array, new_image_array, pixel_current_height, pixel_side_height, reference,
                               status_addendum):
@@ -562,7 +588,10 @@ class MapInfo(GameObject):
 
         potential = self.what_image_is_this(new_image_array, reference)
         this_status = max(potential.keys(), key=(lambda k: potential[k]))
-        if potential[this_status] > self.imageThreshold["Control"]:
+
+        successfully_identified = potential[this_status] > self.imageThreshold["Control"]
+
+        if successfully_identified:
             pixel_to_check = {
                 'current': img_array[pixel_current_height][959],
                 'left': {
@@ -580,7 +609,6 @@ class MapInfo(GameObject):
 
             if (self.objectiveProgress["controlProgress"][1] is None and this_status != "Prepare") or \
                             this_status == "Locked":
-                print("execute identify_control_competitive_progress")
                 competitive_progress = self.identify_control_competitive_progress(img_array)
 
             if self.competitive and competitive_progress is not False:
@@ -619,11 +647,11 @@ class MapInfo(GameObject):
         self.check_competitive = False
         self.competitive_confirmed = True
         if offense_found and defense_found:
-            print("Competitive")
+            # print("Competitive")
             self.competitive = True
             return [offense_result, defense_result]
         else:
-            print("Not Competitive")
+            # print("Not Competitive")
             return False
 
     def identify_control_competitive_side_progress(self, img_array, team_side, mode="standard"):
@@ -790,6 +818,7 @@ class MapInfo(GameObject):
                 'Victory': self.gameEndReference["Victory"]
             }
             potential = self.what_image_is_this(np.asarray(result), reference_dictionary)
+            print('Victory Potential: ' + str(potential["Victory"]))
             if potential["Victory"] > self.imageThreshold["Victory"]:
                 self.objectiveProgress["gameEnd"] = "Victory"
                 print("Victory!")
@@ -804,6 +833,7 @@ class MapInfo(GameObject):
                     'Defeat': self.gameEndReference["Defeat"]
                 }
                 potential = self.what_image_is_this(np.asarray(result), reference_dictionary)
+                print('Defeat Potential: ' + str(potential["Defeat"]))
                 if potential["Defeat"] > self.imageThreshold["Defeat"]:  # max 7200
                     self.objectiveProgress["gameEnd"] = "Defeat"
                     print("Defeat! :(")
@@ -967,7 +997,7 @@ class MapInfo(GameObject):
 
     def dimensions_from_version(self):
         dimensions = {
-            "1.17": {
+            "1.20": {
                 "assault": {
                     "quick": {
                         "point1": {
@@ -1128,6 +1158,42 @@ class MapInfo(GameObject):
                         'end_x': 1200,
                         'start_y': 270,
                         'end_y': 410
+                    }
+                },
+                'map': {
+                    'Hero Select': {
+                        'normal': {
+                            'start_x': 71,
+                            'end_x': 271,
+                            'start_y': 200,
+                            'end_y': 245
+                        },
+                        'lijiang': {
+                            'start_x': 294,
+                            'end_x': 420,
+                            'start_y': 201,
+                            'end_y': 244
+                        },
+                        'game_type': {
+                            'start_x': 60,
+                            'end_x': 135,
+                            'start_y': 168,
+                            'end_y': 239
+                        },
+                        'extended': {
+                            'start_x': 144,
+                            'end_x': 344,
+                            'start_y': 200,
+                            'end_y': 245
+                        }
+                    },
+                    'Tab': {
+                        'normal': {
+                            'start_x': 65,
+                            'end_x': 285,
+                            'start_y': 38,
+                            'end_y': 51
+                        }
                     }
                 }
             }
