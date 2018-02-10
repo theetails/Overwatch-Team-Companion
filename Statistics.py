@@ -179,6 +179,71 @@ class Statistics:
         new_snapshots = []
         print("Snapshot Length: " + str(len(snapshots)))
         for number, snapshot in enumerate(snapshots):
+            # Fix Times
+
+            # print(number)
+            # print("Game Time: " + datetime.strftime(snapshot.game_time["datetime"], "%M:%S"))
+            # print("System Time: " + datetime.strftime(snapshot.system_time, "%m-%d-%y %H-%M-%S"))
+            loop_completed = False
+            while not loop_completed:
+                if round_start_time_index > round_start_time_length:
+                    print("Step 1: prevent index beyond length")
+                    loop_completed = True
+                    continue
+                current_round_times = self.round_start_time[-round_start_time_index]
+                if current_round_times["start_time"] < snapshot.system_time:
+                    print("Step 2: Time Correctly Synced")
+                    system_time_delta = snapshot.system_time - current_round_times["start_time"]
+                    game_time_delta = system_time_delta - timedelta(
+                        minutes=current_round_times["game_time"].minute,
+                        seconds=current_round_times["game_time"].second)
+                    game_time = current_round_times["game_time"] + game_time_delta
+
+                    # Fix Blank Heroes
+                    for team_number, team in enumerate(snapshot.heroes):
+                        for hero_number, hero in enumerate(team):
+                            if hero == "blank" and len(new_snapshots) > 0:
+                                print("blank hero")
+                                snapshots[number].heroes[team_number][hero_number] = new_snapshots[-1].heroes[team_number][hero_number]
+                    new_snapshots.append((snapshots[number]))
+                    new_snapshots[-1].game_time["datetime"] = game_time
+                    loop_completed = True
+                    print(system_time_delta)
+                    print(game_time)
+                    continue
+                if round_start_time_index + 1 > round_start_time_length:
+                    print("Step 3: prevent index of next round_start_time beyond length")
+                    loop_completed = True
+                    continue
+                previous_round_times = self.round_start_time[-(round_start_time_index + 1)]
+                previous_round_end_time = previous_round_times["start_time"] + timedelta(
+                    minutes=previous_round_times["game_time"].minute,
+                    seconds=previous_round_times["game_time"].second)
+                if snapshot.system_time > previous_round_end_time:
+                    print("Step 4: before round started")
+                    loop_completed = True
+                else:
+                    round_start_time_index = round_start_time_index + 1
+                    print("Step 5: next round_start_time")
+        self.snapshots = list(reversed(new_snapshots))
+
+        # for number, snapshot in enumerate(new_snapshots):
+            # print(number)
+            # print("Game Time: " + datetime.strftime(snapshot.game_time["datetime"], "%M:%S"))
+            # print("System Time: " + datetime.strftime(snapshot.system_time, "%m-%d-%y %H-%M-%S"))
+
+    def condense_snapshots(self):
+        print("condense snapshots")
+        # snapshots = list(reversed(self.snapshots))
+        new_snapshots = []
+
+        for number, snapshot in enumerate(self.snapshots):
+            if number == 0:
+
+                continue
+            # sta
+
+
             # print(number)
             # print("Game Time: " + datetime.strftime(snapshot.game_time["datetime"], "%M:%S"))
             # print("System Time: " + datetime.strftime(snapshot.system_time, "%m-%d-%y %H-%M-%S"))
@@ -219,9 +284,9 @@ class Statistics:
         self.snapshots = list(reversed(new_snapshots))
 
         # for number, snapshot in enumerate(new_snapshots):
-            # print(number)
-            # print("Game Time: " + datetime.strftime(snapshot.game_time["datetime"], "%M:%S"))
-            # print("System Time: " + datetime.strftime(snapshot.system_time, "%m-%d-%y %H-%M-%S"))
+        # print(number)
+        # print("Game Time: " + datetime.strftime(snapshot.game_time["datetime"], "%M:%S"))
+        # print("System Time: " + datetime.strftime(snapshot.system_time, "%m-%d-%y %H-%M-%S"))
 
     def submit_stats(self, game_end, current_time):
         """
@@ -241,6 +306,7 @@ class Statistics:
         # correct snapshot times and objective progress, delete those from between rounds
         self.save_shapshots_for_debugging()
         self.correct_snapshots()
+        # self.condense_snapshots()
 
         snapshot_list = []
 
@@ -271,6 +337,14 @@ class Statistics:
             snapshot_output_list.append(snapshot.output_all())
         with open("Debug\\Snapshot.txt", 'w') as file:
             json.dump(snapshot_output_list, file)
+
+    def load_snapshot(self, file_name):
+        with open("Debug\\" + file_name, 'r') as file_data:
+            json_data = json.loads(file_data.read())
+            for saved_snapshot in json_data:
+                self.add_snapshot(saved_snapshot[2], saved_snapshot[3], saved_snapshot[4], saved_snapshot[5],
+                                  {"datetime": datetime.strptime(saved_snapshot[0], "%M:%S"), "verified": True},
+                                  datetime.strptime(saved_snapshot[1], "%m-%d-%y %H-%M-%S"))
 
     @staticmethod
     def send_saved_snapshot():
@@ -306,5 +380,6 @@ class SnapShot:
 
 if __name__ == "__main__":
     this = Statistics()
-    this.send_saved_snapshot()
-    
+    this.load_snapshot("Snapshot-1.txt")
+    this.submit_stats("Victory", datetime.now())
+    # this.send_saved_snapshot()
