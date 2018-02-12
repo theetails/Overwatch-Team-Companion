@@ -29,6 +29,7 @@ class AppController(ApplicationSession):
 
         self.debug_mode = overwatch_config["debug_mode"]
         self.game_version = overwatch_config["version"]
+        self.bbox = (overwatch_config["start_pixel"], 0, overwatch_config["start_pixel"] + 1920, 1080)
 
         self.this_map = overwatch_config["map"]
         self.this_side = overwatch_config["side"]
@@ -44,6 +45,7 @@ class AppController(ApplicationSession):
             "debug_mode": config_parser.get('Standard', 'Debug'),
             "map": config_parser.get('Debug', 'Map'),
             "side": config_parser.get('Debug', 'Side'),
+            "start_pixel": int(config_parser.get('Standard', 'StartPixel'),)
         }
         return config
 
@@ -78,7 +80,7 @@ class AppController(ApplicationSession):
                 self.gameObject.map.currentMapSide = msg2[0]
 
         self.subscription = await self.subscribe(on_event, self.subscriptionString)
-        self.gameObject = Game(self.game_version, self.debug_mode)
+        self.gameObject = Game(self.game_version, self.bbox, self.debug_mode)
         self.publish(self.subscriptionString, "Hello")
         await asyncio.sleep(.5)
         while True:
@@ -91,7 +93,7 @@ class AppController(ApplicationSession):
 
     # supplementary functions
     def create_hero_references(self):
-        this_game_object = Game(self.game_version, self.debug_mode)
+        this_game_object = Game(self.game_version, self.bbox, self.debug_mode)
 
         reference_string = [
             'Reference\\HeroImageList.txt',
@@ -118,9 +120,10 @@ class AppController(ApplicationSession):
         print("Done")
 
     def create_images_for_hero_reference(self):
-        this_game_object = Game(self.game_version, self.debug_mode)
+        this_game_object = Game(self.game_version, self.bbox, self.debug_mode)
         screen_img_array = this_game_object.get_screen()
         current_view = this_game_object.map.main(screen_img_array, "for_reference")
+        current_view = "Hero Select"
         hero_range = {"Hero Select": 7, "Tab": 13}
         for heroNumber in range(1, hero_range[current_view]):
             hero = this_game_object.heroes.heroesDictionary[heroNumber]
@@ -129,7 +132,7 @@ class AppController(ApplicationSession):
         print("Done")
 
     def create_images_for_map_reference_hero_select(self):
-        this_game_object = Game(self.game_version, self.debug_mode)
+        this_game_object = Game(self.game_version, self.bbox, self.debug_mode)
         screen_img_array = this_game_object.get_screen()
         this_game_object.map.currentImageArray = this_game_object.map.get_map(
             screen_img_array, "Hero Select", section='extended')  # , threshold_balance=True)
@@ -137,14 +140,14 @@ class AppController(ApplicationSession):
         print("Done")
 
     def create_images_for_map_reference_tab(self):
-        this_game_object = Game(self.game_version, self.debug_mode)
+        this_game_object = Game(self.game_version, self.bbox, self.debug_mode)
         screen_img_array = this_game_object.get_screen()
         this_game_object.map.currentImageArray = this_game_object.map.get_map(screen_img_array, "Tab", section='normal')
         this_game_object.map.save_debug_data("for_reference")
         print("Done")
 
     def create_images_for_map_reference_objective(self):
-        this_game_object = Game(self.game_version, self.debug_mode)
+        this_game_object = Game(self.game_version, self.bbox, self.debug_mode)
         screen_img_array = this_game_object.get_screen()
         this_game_object.map.current_map[0] = self.this_map
         this_game_object.map.currentMapSide = self.this_side
@@ -189,7 +192,7 @@ class AppController(ApplicationSession):
 
     def create_digit_images(self):
         sp.call('cls', shell=True)
-        this_game_object = Game(self.game_version, self.debug_mode)
+        this_game_object = Game(self.game_version, self.bbox, self.debug_mode)
         screen_img_array = this_game_object.get_screen()
         this_game_object.gameTime.main(screen_img_array, "reference")
         print("Done")

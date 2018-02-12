@@ -12,8 +12,9 @@ from TimeInfo import TimeInfo
 
 
 class Game:
-    def __init__(self, game_version, debug_mode):
+    def __init__(self, game_version, bbox, debug_mode):
         self.game_version = game_version
+        self.bbox = bbox
         self.debugMode = debug_mode
         self.heroes = AllHeroes(game_version, debug_mode)
         self.map = MapInfo(game_version, debug_mode)
@@ -91,7 +92,6 @@ class Game:
             sleep_time = 0
         return sleep_time
 
-    @staticmethod
-    def get_screen():
-        screen_img = ImageGrab.grab(bbox=None)
+    def get_screen(self):
+        screen_img = ImageGrab.grab(bbox=self.bbox)
         return np.asarray(screen_img)
