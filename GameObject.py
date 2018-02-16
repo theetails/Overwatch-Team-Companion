@@ -88,7 +88,7 @@ class GameObject:
         return ratios
 
     def what_word_is_this(self, captured_image, encoded_reference_images_dictionary, letter_string="", loop_count=0):
-        print("what_word_is_this")
+        # print("what_word_is_this")
         if loop_count == 0:
             # flipped = np.flipud(captured_image)
             # flipped.setflags(write=True)
@@ -105,7 +105,7 @@ class GameObject:
             img = Image.fromarray(captured_image)
             img.save("Debug\\Full.png", "PNG")
         try:
-            # desired_loop = 17
+            # desired_loop = 121  # 91: O 121 : E
             # if loop_count < desired_loop:
             #     sliced_image = np.delete(captured_image, 0, axis=1)
             #     return self.what_word_is_this(sliced_image, encoded_reference_images_dictionary,
@@ -133,15 +133,14 @@ class GameObject:
             next_all_black = None
             for index, pixel in enumerate(equivalent_columns):
                 if index > 0 and next_all_black != 0:
-                    print(pixel[0])
                     if pixel[0]:
                         next_all_black = index
                         break
             if next_all_black is None:
                 next_all_black = 0
-            print("next_all_black: " + str(index))
+            # print("next_all_black: " + str(index))
             range_to_remove = list(range(next_all_black + 1, len(captured_image_list[0])))
-            print("range_to_remove: " + str(range_to_remove))
+            # print("range_to_remove: " + str(range_to_remove))
             sliced_image = np.delete(captured_image, range_to_remove, axis=1)
             img = Image.fromarray(sliced_image)
             img.save("Debug\\" + str(loop_count) + " Letter " + ".png", "PNG")
@@ -168,7 +167,7 @@ class GameObject:
                 # print(potential)
                 letter_string = letter_string + max_potential
                 sliced_image = np.delete(
-                    captured_image, range(0, encoded_reference_images_dictionary[max_potential]["width"]), axis=1)
+                    captured_image, range(0, encoded_reference_images_dictionary[max_potential]["width"]-1), axis=1)
 
                 # # save
                 # img = Image.fromarray(captured_image)
@@ -192,7 +191,7 @@ class GameObject:
         total_potential = {}
         total_score = {}
         for item_name, reference_image in reference_images_dictionary.items():
-            # if item_name not in ["d", "o", "q"]:
+            # if item_name not in ["e", "l"]:
             #     continue
             # print(item_name)
             total_potential[item_name] = 0
