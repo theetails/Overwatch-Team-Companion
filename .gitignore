@@ -1,7 +1,7 @@
 #Overwatch App Specific
 Debug/
 options.ini
-*.tff
+*.ttf
 
 # -- Python Section --
 # Byte-compiled / optimized / DLL files
