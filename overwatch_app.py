@@ -158,6 +158,7 @@ class AppController(ApplicationSession):
     def create_map_references(self):
 
         reference_string = [
+            'Reference\\Letters.txt',
             'Reference\\MapImageList.txt',
             'Reference\\MapImageHighThreshold.txt',
             'Reference\\MapImageListLijiang.txt',
@@ -168,6 +169,7 @@ class AppController(ApplicationSession):
             'Reference\\GameEnd.txt'
         ]
         path = [
+            "Reference\\Letters",
             "Reference\\Map Name Image Sources",
             "Reference\\Map Name Image Sources High Threshold",
             "Reference\\Lijiang Map Name Image Sources",
