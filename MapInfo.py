@@ -1,6 +1,7 @@
 from PIL import Image
 import numpy as np
 from scipy.misc import imresize
+from scipy.ndimage.filters import gaussian_filter
 import operator
 from functools import reduce
 import copy
@@ -68,8 +69,13 @@ class MapInfo(GameObject):
             "Tab": self.read_references("Reference\\MapImageListTab.txt"),
             "Lijiang": self.read_references("Reference\\MapImageListLijiang.txt"),
             "High Threshold": self.read_references("Reference\\MapImageHighThreshold.txt"),
-            "Game Type": self.read_references("Reference\\MapImageListGameType.txt")
+            "Game Type": self.read_references("Reference\\MapImageListGameType.txt"),
+            "Letters": self.read_references("Reference\\Letters.txt"),
         }
+
+        self.letters_rle = {}
+        for letter, image in self.mapReferences["Letters"].items():
+            self.letters_rle[letter] = self.run_length_encode(image)
 
         self.assaultReference = self.read_references("Reference\\ObjectiveListAssault.txt")
         self.controlReference = self.read_references("Reference\\ObjectiveListControl.txt")
@@ -82,7 +88,8 @@ class MapInfo(GameObject):
 
     def main(self, screen_image_array, current_time):
         # check if Tab View
-        map_result = self.identify_map(screen_image_array, "Tab")
+        # map_result = self.identify_map(screen_image_array, "Tab")
+        map_result = False
         if map_result:
             this_view = "Tab"
             self.check_competitive = True
@@ -181,7 +188,11 @@ class MapInfo(GameObject):
                 section = "extended"
 
         this_map_array = self.get_map(screen_img_array, view, section=section)
-        potential = self.what_image_is_this(this_map_array, self.mapReferences[view])
+        # potential = self.what_image_is_this(this_map_array, self.mapReferences[view])
+        print(section)
+        potential = self.what_word_is_this(this_map_array, self.letters_rle)
+        print(potential)
+        return
         this_map = max(potential.keys(), key=(lambda k: potential[k]))
         self.previousImageArray = self.currentImageArray
         self.currentImageArray = this_map_array
@@ -247,7 +258,25 @@ class MapInfo(GameObject):
 
         if view == "Hero Select":
             if section != 'game_type':
-                scaled_image_array = imresize(map_image_array, (19, 115))
+                flipped = np.flipud(map_image_array)
+                flipped.setflags(write=True)
+                for row_number, row in enumerate(flipped):
+                    left_shift = int(row_number / 3.72)  # 41 / 11
+                    if left_shift > 0:
+                        for column_number, pixel in enumerate(row):
+                            try:
+                                flipped[row_number][column_number] = flipped[row_number][column_number + left_shift]
+                            except IndexError:
+                                flipped[row_number][column_number] = 0
+                map_image_array = np.flipud(flipped)
+                blurred_image_array = gaussian_filter(map_image_array, 1)
+                scaled_image_array = imresize(blurred_image_array, (19, 180))
+
+
+
+                # save
+                img = Image.fromarray(blurred_image_array)
+                img.save("Debug\\Full Full.png", "PNG")
             else:
                 scaled_image_array = map_image_array
         elif view == "Tab":
@@ -1164,9 +1193,9 @@ class MapInfo(GameObject):
                     'Hero Select': {
                         'normal': {
                             'start_x': 71,
-                            'end_x': 271,
-                            'start_y': 200,
-                            'end_y': 245
+                            'end_x': 492,  # 271,
+                            'start_y': 198,
+                            'end_y': 248
                         },
                         'lijiang': {
                             'start_x': 294,
@@ -1182,9 +1211,9 @@ class MapInfo(GameObject):
                         },
                         'extended': {
                             'start_x': 144,
-                            'end_x': 344,
-                            'start_y': 200,
-                            'end_y': 245
+                            'end_x': 565,  # 344,
+                            'start_y': 198,
+                            'end_y': 248
                         }
                     },
                     'Tab': {
