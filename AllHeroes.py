@@ -105,13 +105,13 @@ class AllHeroes(GameObject):
         if not result:
             if view == "Hero Select" and this_hero.slotNumber == 1:
                 result = self.get_hero_from_potential(
-                    this_hero, this_hero_img_threshold, self.characterBlurReferences, correct_hero_threshold=2700)
+                    this_hero, this_hero_img_threshold, self.characterBlurReferences, correct_hero_threshold=0.85)
         # 3) check standard array of heroes
         if not result:
             result = self.get_hero_from_potential(this_hero, this_hero_img_threshold, other_hero_references)
         return result
 
-    def get_hero_from_potential(self, this_hero, image, character_references, correct_hero_threshold=2850):
+    def get_hero_from_potential(self, this_hero, image, character_references, correct_hero_threshold=0.9):
         potential = self.what_image_is_this(image, character_references)  # compare to References
         this_hero.set_potential(potential)
         identified_hero = max(potential.keys(), key=(lambda k: potential[k]))
