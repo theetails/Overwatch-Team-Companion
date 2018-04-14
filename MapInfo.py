@@ -56,7 +56,7 @@ class MapInfo(GameObject):
         "Control": 0.95,  # 270, max 384, lower limit: 250
         "Victory": 0.95,  # 6400,
         "Defeat": 0.95,  # 5800,
-        "Game Type": 0.95
+        "Game Type": 0.8
     }
 
     def __init__(self, game_version, debug_mode):
@@ -184,7 +184,10 @@ class MapInfo(GameObject):
         section = "normal"
 
         if view == "Hero Select":
+            #  Detect Game Mode
             this_mode_array = self.get_map(screen_img_array, view, section='game_type')
+            # img = Image.fromarray(this_mode_array)
+            # img.save("Debug\\Game Mode.png", "PNG")
             potential = self.what_image_is_this(this_mode_array, self.mapReferences['Game Type'])
             this_game_mode = max(potential.keys(), key=(lambda k: potential[k]))
             if potential[this_game_mode] > self.imageThreshold["Game Type"]:
@@ -208,7 +211,7 @@ class MapInfo(GameObject):
         self.potential = potential
         self.thisMapPotential = potential[this_map]
         if potential[this_map] > self.imageThreshold[view]:
-            print(str(potential[this_map]) + " " + this_map)
+            # print(str(potential[this_map]) + " " + this_map)
             if this_map == "lijiang tower" and view == "Hero Select":
                 this_map_lijiang = self.get_map(screen_img_array, "Hero Select", section='lijiang')
                 potential = self.what_image_is_this(this_map_lijiang, self.mapReferences["Lijiang"])
@@ -282,16 +285,10 @@ class MapInfo(GameObject):
             if section != 'game_type':
                 img = Image.fromarray(map_image_array)
                 img.save("Debug\\Full Original Map.png", "PNG")
-                scaled_image_array = self.process_image(map_image_array, filter_enabled=True)
-                # map_image_temp = Image.fromarray(map_image_array)
-                # map_filtered = map_image_temp.filter(ImageFilter.FIND_EDGES)
-                # map_image_array = np.asarray(map_filtered)
-                # blurred_image_array = gaussian_filter(map_image_array, 1)
-                # scaled_image_array = imresize(blurred_image_array, (19, 180))
-
-                print(1)
+                processed_image_array = self.process_image(map_image_array, filter_enabled=True)
+                scaled_image_array = imresize(processed_image_array, (19, 180))
             else:
-                scaled_image_array = map_image_array
+                scaled_image_array = self.process_image(map_image_array, filter_enabled=True)
         elif view == "Tab":
             scaled_image_array = map_image_array
 
@@ -301,7 +298,8 @@ class MapInfo(GameObject):
             new_image_array = self.image_to_black_and_white(scaled_image_array, 252)
         return new_image_array
 
-    def process_image(self, map_image_array, filter_enabled=True):
+    @staticmethod
+    def process_image(map_image_array, filter_enabled=True):
 
         # straighten letters
         # flipped = np.flipud(map_image_array)
@@ -335,9 +333,7 @@ class MapInfo(GameObject):
             img_array = map_image_array
             # img_array = gaussian_filter(map_image_array, 1)
 
-        scaled_image_array = imresize(img_array, (19, 180))
-
-        return scaled_image_array
+        return img_array
 
     def identify_side(self, img_array):
         pixel_to_check = img_array[95][95]
