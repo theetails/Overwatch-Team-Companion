@@ -29,7 +29,6 @@ class GameObject:
 
     def threshold(self, image_array):
         balance = self.get_image_balance(image_array)
-        print(balance)
 
         # if balance < 160:
         #     balance = 160
@@ -182,8 +181,8 @@ class GameObject:
                                                   loop_count=loop_count + 1)
                 else:
                     return letter_string
-        except Exception as execp:
-            print(execp)
+        except Exception as exception:
+            print(exception)
 
     def what_letter_is_this(self, captured_image_list, reference_images_dictionary):
         print("what letter is this")
