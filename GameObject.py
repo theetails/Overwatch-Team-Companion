@@ -29,6 +29,10 @@ class GameObject:
 
     def threshold(self, image_array):
         balance = self.get_image_balance(image_array)
+        print(balance)
+
+        # if balance < 160:
+        #     balance = 160
 
         # ("Balance: " + str(balance))
         # if 240 < balance < 252:
@@ -156,7 +160,7 @@ class GameObject:
             img = Image.fromarray(captured_image)
             img.save("Debug\\" + str(loop_count) + " Letter " + str(max_potential) + " " + str(round(potential[max_potential], 2)) + ".png", "PNG")
 
-            if potential[max_potential] <= .7:
+            if potential[max_potential] <= 1:
                 sliced_image = np.delete(captured_image, 0, axis=1)
                 if sliced_image.size != 0:
                     return self.what_word_is_this(sliced_image, encoded_reference_images_dictionary, letter_string=letter_string, loop_count=loop_count + 1)

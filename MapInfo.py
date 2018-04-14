@@ -1,4 +1,4 @@
-from PIL import Image
+from PIL import Image, ImageFilter, ImageOps
 import numpy as np
 from scipy.misc import imresize
 from scipy.ndimage.filters import gaussian_filter
@@ -6,12 +6,14 @@ import operator
 from functools import reduce
 import copy
 
+from MapState import MapState
+
 from GameObject import GameObject
 
 
 class MapInfo(GameObject):
     mapDictionary = {
-        # escort
+        # assault
         "hanamura": "assault", "horizon lunar colony": "assault", "temple of anubis": "assault",
         "volskaya industries": "assault",
         # transition
@@ -28,6 +30,9 @@ class MapInfo(GameObject):
         "necropolis": "arena", "nepal sanctum": "arena", "nepal shrine": "arena", "nepal village": "arena",
         "oasis city center": "arena", "oasis gardens": "arena", "oasis university": "arena"
     }
+
+    current_map_state = MapState()
+    previous_map_state = MapState()
     current_map = [None]
     currentMapSide = "offense"
     mapChange = False
@@ -65,7 +70,10 @@ class MapInfo(GameObject):
         self.game_version = game_version
         self.debugMode = debug_mode
         self.mapReferences = {
-            "Hero Select": self.read_references("Reference\\MapImageList.txt"),
+            "Hero Select Standard": self.read_references("Reference\\MapImageListStandard.txt"),
+            "Hero Select Control": self.read_references("Reference\\MapImageListControl.txt"),
+            "Hero Select Hybrid": self.read_references("Reference\\MapImageListHybrid.txt"),
+            "Hero Select Arena": self.read_references("Reference\\MapImageListArena.txt"),
             "Tab": self.read_references("Reference\\MapImageListTab.txt"),
             "Lijiang": self.read_references("Reference\\MapImageListLijiang.txt"),
             "High Threshold": self.read_references("Reference\\MapImageHighThreshold.txt"),
@@ -88,8 +96,7 @@ class MapInfo(GameObject):
 
     def main(self, screen_image_array, current_time):
         # check if Tab View
-        # map_result = self.identify_map(screen_image_array, "Tab")
-        map_result = False
+        map_result = self.identify_map(screen_image_array, "Tab")
         if map_result:
             this_view = "Tab"
             self.check_competitive = True
@@ -188,11 +195,12 @@ class MapInfo(GameObject):
                 section = "extended"
 
         this_map_array = self.get_map(screen_img_array, view, section=section)
-        # potential = self.what_image_is_this(this_map_array, self.mapReferences[view])
-        print(section)
-        potential = self.what_word_is_this(this_map_array, self.letters_rle)
-        print(potential)
-        return
+        map_reference = self.what_map_reference(view, section)
+        potential = self.what_image_is_this(this_map_array, map_reference)
+        # print(section)
+        # potential = self.what_word_is_this(this_map_array, self.letters_rle)
+        # print(potential)
+        # return
         this_map = max(potential.keys(), key=(lambda k: potential[k]))
         self.previousImageArray = self.currentImageArray
         self.currentImageArray = this_map_array
@@ -235,6 +243,20 @@ class MapInfo(GameObject):
         else:
             return False
 
+    def what_map_reference(self, view, section):
+        if view == "Tab":
+            map_reference = self.mapReferences["Tab"]
+        elif section == "normal":
+            map_reference = self.mapReferences["Hero Select Standard"]
+        else:
+            if self.game_mode == "control":
+                map_reference = self.mapReferences["Hero Select Control"]
+            elif self.game_mode == "hybrid":
+                map_reference = self.mapReferences["Hero Select Hybrid"]
+            else:
+                map_reference = self.mapReferences["Hero Select Arena"]
+        return map_reference
+
     def save_debug_data(self, current_time):
         path = "Debug"
 
@@ -258,25 +280,16 @@ class MapInfo(GameObject):
 
         if view == "Hero Select":
             if section != 'game_type':
-                flipped = np.flipud(map_image_array)
-                flipped.setflags(write=True)
-                for row_number, row in enumerate(flipped):
-                    left_shift = int(row_number / 3.72)  # 41 / 11
-                    if left_shift > 0:
-                        for column_number, pixel in enumerate(row):
-                            try:
-                                flipped[row_number][column_number] = flipped[row_number][column_number + left_shift]
-                            except IndexError:
-                                flipped[row_number][column_number] = 0
-                map_image_array = np.flipud(flipped)
-                blurred_image_array = gaussian_filter(map_image_array, 1)
-                scaled_image_array = imresize(blurred_image_array, (19, 180))
+                img = Image.fromarray(map_image_array)
+                img.save("Debug\\Full Original Map.png", "PNG")
+                scaled_image_array = self.process_image(map_image_array, filter_enabled=True)
+                # map_image_temp = Image.fromarray(map_image_array)
+                # map_filtered = map_image_temp.filter(ImageFilter.FIND_EDGES)
+                # map_image_array = np.asarray(map_filtered)
+                # blurred_image_array = gaussian_filter(map_image_array, 1)
+                # scaled_image_array = imresize(blurred_image_array, (19, 180))
 
-
-
-                # save
-                img = Image.fromarray(blurred_image_array)
-                img.save("Debug\\Full Full.png", "PNG")
+                print(1)
             else:
                 scaled_image_array = map_image_array
         elif view == "Tab":
@@ -287,6 +300,44 @@ class MapInfo(GameObject):
         else:
             new_image_array = self.image_to_black_and_white(scaled_image_array, 252)
         return new_image_array
+
+    def process_image(self, map_image_array, filter_enabled=True):
+
+        # straighten letters
+        # flipped = np.flipud(map_image_array)
+        # flipped.setflags(write=True)
+        # for row_number, row in enumerate(flipped):
+        #     left_shift = int(row_number / 3.72)  # 41 / 11
+        #     if left_shift > 0:
+        #         for column_number, pixel in enumerate(row):
+        #             try:
+        #                 flipped[row_number][column_number] = flipped[row_number][column_number + left_shift]
+        #             except IndexError:
+        #                 flipped[row_number][column_number] = 0
+        # map_image_array = np.flipud(flipped)
+
+        if filter_enabled:
+            map_image = Image.fromarray(map_image_array)
+            contoured_image = map_image.filter(ImageFilter.CONTOUR)  # .filter(ImageFilter.SMOOTH_MORE)
+            inverted_image = ImageOps.invert(contoured_image)
+
+            img_array = np.asarray(inverted_image)
+            img_array.setflags(write=True)
+            for row_number, row in enumerate(img_array):
+                for column_number, column in enumerate(row):
+                    first_four_rows = list(range(0, 4))
+                    last_four_rows = list(range(len(img_array) - 4, len(img_array)))
+                    if row_number in first_four_rows or row_number in last_four_rows:
+                        img_array[row_number][column_number] = [0, 0, 0]
+                    elif column_number == 0 or column_number == len(column):
+                        img_array[row_number][column_number] = [0, 0, 0]
+        else:
+            img_array = map_image_array
+            # img_array = gaussian_filter(map_image_array, 1)
+
+        scaled_image_array = imresize(img_array, (19, 180))
+
+        return scaled_image_array
 
     def identify_side(self, img_array):
         pixel_to_check = img_array[95][95]
@@ -1026,7 +1077,7 @@ class MapInfo(GameObject):
 
     def dimensions_from_version(self):
         dimensions = {
-            "1.20": {
+            "1.22": {
                 "assault": {
                     "quick": {
                         "point1": {
@@ -1192,7 +1243,7 @@ class MapInfo(GameObject):
                 'map': {
                     'Hero Select': {
                         'normal': {
-                            'start_x': 71,
+                            'start_x': 67,
                             'end_x': 492,  # 271,
                             'start_y': 198,
                             'end_y': 248
@@ -1211,7 +1262,7 @@ class MapInfo(GameObject):
                         },
                         'extended': {
                             'start_x': 144,
-                            'end_x': 565,  # 344,
+                            'end_x': 706,  # 565,  # 344,
                             'start_y': 198,
                             'end_y': 248
                         }

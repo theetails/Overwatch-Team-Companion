@@ -159,7 +159,10 @@ class AppController(ApplicationSession):
 
         reference_string = [
             'Reference\\Letters.txt',
-            'Reference\\MapImageList.txt',
+            'Reference\\MapImageListStandard.txt',
+            'Reference\\MapImageListControl.txt',
+            'Reference\\MapImageListArena.txt',
+            'Reference\\MapImageListHybrid.txt',
             'Reference\\MapImageHighThreshold.txt',
             'Reference\\MapImageListLijiang.txt',
             'Reference\\MapImageListTab.txt',
@@ -170,7 +173,10 @@ class AppController(ApplicationSession):
         ]
         path = [
             "Reference\\Letters",
-            "Reference\\Map Name Image Sources",
+            "Reference\\Map Name Image Sources\\Standard",
+            "Reference\\Map Name Image Sources\\Control",
+            "Reference\\Map Name Image Sources\\Arena",
+            "Reference\\Map Name Image Sources\\Hybrid",
             "Reference\\Map Name Image Sources High Threshold",
             "Reference\\Lijiang Map Name Image Sources",
             "Reference\\Map Name Tab Image Sources",
