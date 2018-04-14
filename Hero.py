@@ -41,9 +41,18 @@ class Hero:
         start_x = 249 + (x_hero_number * 192)
         end_x = 326 + (x_hero_number * 192)
 
-        self.screenPositionCharacterSelect = {"start_x": start_x, "end_x": end_x, "start_y": character_select_start_y,
-                                              "end_y": character_select_end_y}
-        self.screenPositionTab = {"start_x": start_x, "end_x": end_x, "start_y": start_y, "end_y": end_y}
+        self.screenPositionCharacterSelect = {
+            "start_x": start_x,
+            "end_x": end_x,
+            "start_y": character_select_start_y,
+            "end_y": character_select_end_y
+        }
+        self.screenPositionTab = {
+            "start_x": start_x,
+            "end_x": end_x,
+            "start_y": start_y,
+            "end_y": end_y
+        }
 
     def save_debug_data(self, current_time):
         path = "Debug"
