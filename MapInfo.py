@@ -254,7 +254,7 @@ class MapInfo(GameObject):
         else:
             if self.game_mode == "control":
                 map_reference = self.mapReferences["Hero Select Control"]
-            elif self.game_mode == "hybrid":
+            elif self.game_mode == "transition":
                 map_reference = self.mapReferences["Hero Select Hybrid"]
             else:
                 map_reference = self.mapReferences["Hero Select Arena"]
