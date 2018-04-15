@@ -3,11 +3,11 @@ from PIL import Image
 
 
 class Hero:
-    heroesReferenceDictionary = {"unknown": "blank", "searching": "blank", "dva": 1, "reinhardt": 2, "roadhog": 3,
-                                 "winston": 4, "zarya": 5, "tracer": 6, "mccree": 7, "pharah": 8, "reaper": 9,
-                                 "soldier76": 10, "genji": 11, "bastion": 12, "hanzo": 13, "junkrat": 14, "mei": 15,
-                                 "torbjorn": 16, "widowmaker": 17, "lucio": 18, "mercy": 19, "symmetra": 20,
-                                 "zenyatta": 21, "ana": 22, "sombra": 23, "orisa": 24, "doomfist": 25, "moira": 26}
+    heroesReferenceDictionary = {
+        "unknown": "blank", "searching": "blank", "dva": 1, "reinhardt": 2, "roadhog": 3, "winston": 4, "zarya": 5,
+        "tracer": 6, "mccree": 7, "pharah": 8, "reaper": 9, "soldier76": 10, "genji": 11, "bastion": 12, "hanzo": 13,
+        "junkrat": 14, "mei": 15, "torbjorn": 16, "widowmaker": 17, "lucio": 18, "mercy": 19, "symmetra": 20,
+        "zenyatta": 21, "ana": 22, "sombra": 23, "orisa": 24, "doomfist": 25, "moira": 26, "brigitte": 27}
 
     def __init__(self, this_slot_number):
         self.currentHero = None
