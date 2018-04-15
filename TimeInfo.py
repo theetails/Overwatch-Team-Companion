@@ -15,8 +15,8 @@ class TimeInfo(GameObject):
         self.digitDimensions = {
             "start_x": 106,
             "end_x": 114,
-            "start_y": 60,
-            "end_y": 71
+            "start_y": 56,  # 60,
+            "end_y": 67  # 71
         }
         self.game_datetime = datetime.min
         self.roundStartTime = None
@@ -36,7 +36,7 @@ class TimeInfo(GameObject):
         digits_after_colon = 0
 
         # digit_requirement = 79  # Don't need? If its not a colon, it must be a digit
-        colon_requirement = 27
+        colon_requirement = 0.9
 
         dimensions = self.digitDimensions.copy()
         loop_count = 0
