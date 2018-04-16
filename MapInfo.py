@@ -56,7 +56,7 @@ class MapInfo(GameObject):
         "Control": 0.95,  # 270, max 384, lower limit: 250
         "Victory": 0.88,  # 6400,
         "Defeat": 0.88,  # 5800,
-        "Game Type": 0.8
+        "Game Type": 0.83
     }
 
     def __init__(self, game_version, debug_mode):
@@ -193,7 +193,7 @@ class MapInfo(GameObject):
             if potential[this_game_mode] > self.imageThreshold["Game Type"]:
                 self.previous_game_mode = self.game_mode
                 self.game_mode = this_game_mode
-                print(this_game_mode)
+                print(this_game_mode + " " + str(potential[this_game_mode]))
                 #  Hero Select Confirmed
                 section = "extended"
 
