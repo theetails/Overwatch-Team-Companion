@@ -54,8 +54,8 @@ class MapInfo(GameObject):
         "Tab": 0.95,  # 1850, was 1710
         "Assault": 0.95,  # 135,
         "Control": 0.95,  # 270, max 384, lower limit: 250
-        "Victory": 0.95,  # 6400,
-        "Defeat": 0.95,  # 5800,
+        "Victory": 0.88,  # 6400,
+        "Defeat": 0.88,  # 5800,
         "Game Type": 0.8
     }
 
@@ -899,7 +899,6 @@ class MapInfo(GameObject):
                 self.objectiveProgress["gameEnd"] = "Victory"
                 print("Victory!")
                 self.set_game_over()
-            print(potential)
         if self.objectiveProgress["gameEnd"] != "Victory":
             # -- Check for Defeat -- #
             red = [210, 120, 130]
