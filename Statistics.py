@@ -328,8 +328,8 @@ class Statistics:
             debug_file.write(game_end + '\n')
             debug_file.write(current_time_string + '\n')
 
-            json_string = json.dumps(snapshot_list)
-            requests.post("http://voxter.mooo.com:1080/snapshot", data=json_string)
+            # json_string = json.dumps(snapshot_list)
+            # requests.post("http://voxter.mooo.com:1080/snapshot", data=json_string)
 
     def save_shapshots_for_debugging(self):
         snapshot_output_list = []
