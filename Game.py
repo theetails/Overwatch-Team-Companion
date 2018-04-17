@@ -1,7 +1,6 @@
 from PIL import ImageGrab
 import numpy as np
 from datetime import datetime
-import subprocess as sp
 import copy
 import time
 
@@ -23,17 +22,15 @@ class Game:
         self.game_over = True
 
     def main(self, broadcaster):
-        start_time = time.time()
+        start_time = time.time()  # for calculating sleep time
 
-        sleep_time = None
         current_time = datetime.now()
         current_time_string = datetime.strftime(current_time, "%m-%d-%y %H-%M-%S")
 
         screen_img_array = self.get_screen()
+
         current_view = self.map.main(screen_img_array, current_time_string)
         if current_view:
-            # TODO uncomment
-            # sp.call('cls', shell=True)
             print(self.map.get_current_map())
             print(current_view)
 
@@ -60,16 +57,11 @@ class Game:
                     self.heroes.broadcast_heroes(broadcaster)
 
             if current_view == "Tab":
-                sleep_time = 0.5
                 self.map.identify_objective_progress(screen_img_array, current_view=current_view)
                 self.gameTime.main(screen_img_array, current_time_string)
-            elif current_view == "Hero Select":
-                sleep_time = 1
 
-        else:
-            sleep_time = 0
-            if self.game_over is False:
-                self.map.identify_objective_progress(screen_img_array)
+        elif self.game_over is False:
+            self.map.identify_objective_progress(screen_img_array)
 
         # game stats tracking
         if self.statistics is not None:
@@ -78,13 +70,12 @@ class Game:
                 print("Submit Stats and Clear")
                 self.statistics.submit_stats(self.map.objectiveProgress["gameEnd"], current_time)
                 self.statistics = None
-                sleep_time = 10
-                # TODO remove
-                # self.map.reset_objective_progress()
             else:
                 self.statistics.add_snapshot(self.heroes.heroesList, self.map.get_current_map(),
                                              self.map.currentMapSide, copy.deepcopy(self.map.get_objective_progress()),
                                              self.gameTime.get_verified_game_time(current_time), current_time)
+
+        # Determine sleep time, at least 0.5 seconds to reduce app's required performance
         time_difference = time.time() - start_time
         if time_difference < 0.5:
             sleep_time = 0.5 - time_difference
