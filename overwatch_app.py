@@ -123,7 +123,6 @@ class AppController(ApplicationSession):
         this_game_object = Game(self.game_version, self.bbox, self.debug_mode)
         screen_img_array = this_game_object.get_screen()
         current_view = this_game_object.map.main(screen_img_array, "for_reference")
-        current_view = "Hero Select"
         hero_range = {"Hero Select": 7, "Tab": 13}
         for heroNumber in range(1, hero_range[current_view]):
             hero = this_game_object.heroes.heroesDictionary[heroNumber]
