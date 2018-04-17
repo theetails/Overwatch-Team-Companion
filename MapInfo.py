@@ -764,18 +764,20 @@ class MapInfo(GameObject):
 
             new_image_array = self.cut_and_threshold(img_array, self.dimensions["escort"][competitive_string]["lock"])
             lock_reference = {
-                "Locked": self.assaultReference["Locked"]
+                "Locked": self.assaultReference["Locked-Thick"]
             }
             potential = self.what_image_is_this(new_image_array, lock_reference)
+
+            if mode == "for_reference":
+                path = "Debug"
+                # save image
+                img = Image.fromarray(new_image_array)
+                img.save(path + "\\Potential Locked Objective.png", "PNG")
 
             if potential["Locked"] > self.imageThreshold["Assault"]:
                 print("Locked")
                 # print(potential)
-                if mode == "for_reference":
-                    path = "Debug"
-                    # save image
-                    img = Image.fromarray(new_image_array)
-                    img.save(path + "\\Potential Objective.png", "PNG")
+
                 return new_image_array
 
         # dorodo point 1: 32%
