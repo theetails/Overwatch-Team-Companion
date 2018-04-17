@@ -50,12 +50,12 @@ class MapInfo(GameObject):
     previous_game_mode = None
 
     imageThreshold = {
-        "Hero Select": 0.95,  # 1875,
-        "Tab": 0.95,  # 1850, was 1710
-        "Assault": 0.95,  # 135,
-        "Control": 0.95,  # 270, max 384, lower limit: 250
-        "Victory": 0.88,  # 6400,
-        "Defeat": 0.88,  # 5800,
+        "Hero Select": 0.85,
+        "Tab": 0.95,
+        "Assault": 0.95,
+        "Control": 0.95,
+        "Victory": 0.88,
+        "Defeat": 0.88,
         "Game Type": 0.83
     }
 
