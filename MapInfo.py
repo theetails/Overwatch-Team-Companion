@@ -20,9 +20,9 @@ class MapInfo(GameObject):
         "blizzard world": "transition", "eichenwalde": "transition", "hollywood": "transition",
         "king's row": "transition", "numbani": "transition",
         # control
-        "ilios": "control", "lijiang": "control", "nepal": "control", "oasis": "control",
+        "ilios": "control", "lijiang tower": "control", "nepal": "control", "oasis": "control",
         # escort
-        "dorado": "escort", "junkertown": "escort", "route66": "escort", "watchpoint gibraltar": "escort",
+        "dorado": "escort", "junkertown": "escort", "route 66": "escort", "watchpoint gibraltar": "escort",
         # arena
         "ayutthaya": "arena", "black forest": "arena", "castillo": "arena", "chateau guillard": "arena",
         "ecopoint antarctica": "arena", "ilios lighthouse": "arena", "ilios ruins": "arena", "ilios well": "arena",
@@ -527,8 +527,8 @@ class MapInfo(GameObject):
             new_image_array = self.cut_and_threshold(
                 img_array, self.dimensions["assault"][competitive_string]["point2"])
             potential = self.what_image_is_this(new_image_array, self.assaultReference)
-            this_status = max(potential.keys(), key=(lambda k: potential[k]))
-            this_status_split = this_status.split("-")
+            this_status_not_split = max(potential.keys(), key=(lambda k: potential[k]))
+            this_status_split = this_status_not_split.split("-")
             this_status = this_status_split[0]
 
             if self.debugMode:
@@ -537,7 +537,7 @@ class MapInfo(GameObject):
                 img = Image.fromarray(new_image_array)
                 img.save(path + "\\Potential Assault Point 2 " + str(loop_count) + ".png", "PNG")
 
-            if potential[this_status] > self.imageThreshold["Assault"]:
+            if potential[this_status_not_split] > self.imageThreshold["Assault"]:
                 check_game_end = False
                 self.competitive_confirmed = True
                 if this_status != "Locked":
@@ -936,9 +936,7 @@ class MapInfo(GameObject):
         # threshold image to B&W
         for rowNumber, eachRow in enumerate(cropped_image_array):
             black_check_row = True
-
             for pixelNumber, eachPixel in enumerate(eachRow):
-
                 if rowNumber == 0:
                     black_check_column[pixelNumber] = True
 
@@ -1010,7 +1008,6 @@ class MapInfo(GameObject):
         img = Image.fromarray(new_cropped_image_array)
         scaled_image_array = self.threshold(np.asarray((img.resize((160, 45), Image.BILINEAR))))
         scaled_image = Image.fromarray(scaled_image_array)
-
         # save image
         path = "Debug"
         scaled_image.save(path + "\\" + mode + " scaled.png", "PNG")
