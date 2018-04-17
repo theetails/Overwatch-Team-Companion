@@ -51,9 +51,9 @@ class MapInfo(GameObject):
 
     imageThreshold = {
         "Hero Select": 0.85,
-        "Tab": 0.95,
-        "Assault": 0.95,
-        "Control": 0.95,
+        "Tab": 0.9,
+        "Assault": 0.88,
+        "Control": 0.88,
         "Victory": 0.88,
         "Defeat": 0.88,
         "Game Type": 0.83
