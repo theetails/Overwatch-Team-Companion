@@ -91,7 +91,7 @@ class AppController(ApplicationSession):
         self.subscription.unsubscribe()
         self.subscriptionString = None
 
-    # supplementary functions
+    # -- supplementary functions -- #
     def create_hero_references(self):
         this_game_object = Game(self.game_version, self.bbox, self.debug_mode)
 
