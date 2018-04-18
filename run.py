@@ -12,9 +12,6 @@ from AppUI import AppUI
 from Game import Game
 
 
-# from GameObject import GameObject #not for main function
-
-
 class AppController(ApplicationSession):
     def __init__(self, config=None):
         super().__init__(config)
@@ -87,6 +84,8 @@ class AppController(ApplicationSession):
         self.publish(self.subscriptionString, "Hello")
         await asyncio.sleep(.5)
         while True:
+            if not self.debug_mode:
+                sp.call('cls', shell=True)
             sleep_time = self.gameObject.main(self)
             await asyncio.sleep(sleep_time)
 
