@@ -269,10 +269,7 @@ laravel
     Stats Tracking
     Login System
 overwatch_app.py	
-    Identify Objective Progress
-        Keep track of progress
-        Add Capture the Flag
-    Keep track of Game Time
+    Add arena modes objective tracking
     Login System
     Detect Screen Resolution - Currently only 1080p
     Detect Screen Color Differences
