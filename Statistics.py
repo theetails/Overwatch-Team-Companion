@@ -164,6 +164,8 @@ class Statistics:
         # TODO account for time prior to first recorded round_start_time
         print("correct snapshots")
         print(self.round_start_time)
+        if len(self.round_start_time) == 0:
+            return False
         if self.round_start_time[0]["game_time"].minute > 0 or self.round_start_time[0]["game_time"].second > 0:
             zero_system_time = self.round_start_time[0]["start_time"] \
                                - timedelta(minutes=self.round_start_time[0]["game_time"].minute,
@@ -231,6 +233,8 @@ class Statistics:
             # print(number)
             # print("Game Time: " + datetime.strftime(snapshot.game_time["datetime"], "%M:%S"))
             # print("System Time: " + datetime.strftime(snapshot.system_time, "%m-%d-%y %H-%M-%S"))
+
+        return True
 
     def condense_snapshots(self):
         print("condense snapshots")
@@ -304,8 +308,11 @@ class Statistics:
             debug_file.write(current_time_string + '\n')
         """
         # correct snapshot times and objective progress, delete those from between rounds
-        self.save_shapshots_for_debugging()
-        self.correct_snapshots()
+        self.save_snapshots_for_debugging()
+        corrected = self.correct_snapshots()
+        if not corrected:
+            print("no round start time")
+            return
         # self.condense_snapshots()
 
         snapshot_list = []
@@ -331,7 +338,7 @@ class Statistics:
             # json_string = json.dumps(snapshot_list)
             # requests.post("http://voxter.mooo.com:1080/snapshot", data=json_string)
 
-    def save_shapshots_for_debugging(self):
+    def save_snapshots_for_debugging(self):
         snapshot_output_list = []
         for snapshot in self.snapshots:
             snapshot_output_list.append(snapshot.output_all())
