@@ -531,15 +531,14 @@ class MapInfo(GameObject):
             new_image_array = self.identify_escort_objective_progress(img_array, map_type, current_view, mode)
 
         if mode == "for_reference" and new_image_array is not None:
-            path = "Debug"
             # save image
             img = Image.fromarray(new_image_array)
-            img.save(path + "\\Potential Objective.png", "PNG")
+            img.save("Debug\\Potential Objective.png", "PNG")
 
         return True
 
     def identify_assault_objective_progress(self, img_array, map_type, current_view, mode="standard", loop_count=0):
-        """ Identifies the objective progress based on the screen shot
+        """ Identifies the assault objective progress based on the screen shot
 
         :param img_array: Numpy Array of screen shot
         :param map_type: String of map type to be used for cropping dimensions
@@ -551,7 +550,7 @@ class MapInfo(GameObject):
 
         # The only time to check if this is a competitive mode is immediately after a tab view
         if self.check_competitive and current_view != "Tab":
-            self.competitive = self.identify_competitive(img_array, self.currentMapSide, mode)
+            self.competitive = self.identify_competitive(img_array, mode)
             self.check_competitive = False
             print("Competitive: " + str(self.competitive))
 
@@ -578,9 +577,8 @@ class MapInfo(GameObject):
 
             if self.debugMode:
                 # save image
-                path = "Debug"
                 img = Image.fromarray(new_image_array)
-                img.save(path + "\\Potential Assault Point 1 " + str(loop_count) + ".png", "PNG")
+                img.save("Debug\\Potential Assault Point 1 " + str(loop_count) + ".png", "PNG")
 
             if potential[this_status] > self.imageThreshold["Assault"]:
                 check_game_end = False
@@ -625,9 +623,8 @@ class MapInfo(GameObject):
 
             if self.debugMode:
                 # save image
-                path = "Debug"
                 img = Image.fromarray(new_image_array)
-                img.save(path + "\\Potential Assault Point 2 " + str(loop_count) + ".png", "PNG")
+                img.save("Debug\\Potential Assault Point 2 " + str(loop_count) + ".png", "PNG")
 
             if potential[this_status_not_split] > self.imageThreshold["Assault"]:
                 check_game_end = False
@@ -656,7 +653,7 @@ class MapInfo(GameObject):
         return new_image_array
 
     def identify_assault_point_progress(self, img_array, map_type, competitive_string, point_number, mode="standard"):
-        """ Identifies the objective progress based on the screen shot
+        """ Identifies the assault objective progress based on the screen shot
 
         :param img_array: Numpy Array of screen shot
         :param map_type: String of map type to be used for cropping dimensions
@@ -698,12 +695,11 @@ class MapInfo(GameObject):
         self.objectiveProgress["assaultPointProgress"] = assault_percent_complete
         print("Percent Complete: " + assault_percent_complete)
         if self.debugMode:
-            path = "Debug"
             img = Image.fromarray(img_copy)
-            img.save(path + "\\Assault Progress.png", "PNG")
+            img.save("Debug\\Assault Progress.png", "PNG")
 
     def identify_control_objective_progress(self, img_array, mode="standard"):
-        """ Identifies the objective progress based on the screen shot
+        """ Identifies the control objective progress based on the screen shot
 
         :param img_array: Numpy Array of screen shot
         :param mode: String, used for specifying debugging or saving for reference
@@ -714,16 +710,17 @@ class MapInfo(GameObject):
         pixel_side_height = 91
         reference = self.controlReference
         status_addendum = ""
-        new_image_array = self.cut_and_threshold(img_array, self.dimensions["control"]["normal"])
-        objective_identified = self.identify_control_core(img_array, new_image_array, pixel_current_height,
+        objective_image_array = self.cut_and_threshold(img_array, self.dimensions["control"]["normal"])
+        objective_identified = self.identify_control_core(img_array, objective_image_array, pixel_current_height,
                                                           pixel_side_height, reference, status_addendum)
         self.objectiveProgress["unlocked"] = True
 
         if objective_identified is False:
             # check if not controlled with a black background
-            inverted_image_array = self.invert_image_array(new_image_array)
-            objective_identified = self.identify_control_core(img_array, inverted_image_array, pixel_current_height,
-                                                              pixel_side_height, reference, status_addendum)
+            inverted_objective_image_array = self.invert_image_array(objective_image_array)
+            objective_identified = self.identify_control_core(img_array, inverted_objective_image_array,
+                                                              pixel_current_height, pixel_side_height, reference,
+                                                              status_addendum)
 
         if objective_identified is False:
             # check if locked between rounds
@@ -731,49 +728,61 @@ class MapInfo(GameObject):
             pixel_side_height = 128
             reference = {"Prepare": self.controlReference["Locked"]}
             status_addendum = ""
-            new_image_array = self.cut_and_threshold(img_array, self.dimensions["control"]["locked"])
-            inverted_image_array = self.invert_image_array(new_image_array)
-            objective_identified = self.identify_control_core(img_array, inverted_image_array, pixel_current_height,
-                                                              pixel_side_height, reference, status_addendum)
+            objective_image_array = self.cut_and_threshold(img_array, self.dimensions["control"]["locked"])
+            inverted_objective_image_array = self.invert_image_array(objective_image_array)
+            objective_identified = self.identify_control_core(img_array, inverted_objective_image_array,
+                                                              pixel_current_height, pixel_side_height, reference,
+                                                              status_addendum)
         if objective_identified is False:
             # check for overtime
             pixel_current_height = 163
             pixel_side_height = 146
             reference = self.controlReference
             status_addendum = "-Overtime"
-            new_image_array = self.cut_and_threshold(img_array, self.dimensions["control"]["overtime"])
-            objective_identified = self.identify_control_core(img_array, new_image_array, pixel_current_height,
+            objective_image_array = self.cut_and_threshold(img_array, self.dimensions["control"]["overtime"])
+            objective_identified = self.identify_control_core(img_array, objective_image_array, pixel_current_height,
                                                               pixel_side_height, reference, status_addendum)
         if objective_identified is False:
             self.identify_game_end(img_array, mode)
         else:
             self.objectiveProgress["unlocked"] = False
 
-        return new_image_array
+        return objective_image_array
 
-    def identify_control_core(self, img_array, new_image_array, pixel_current_height, pixel_side_height, reference,
-                              status_addendum):
+    def identify_control_core(self, full_screen_img_array, objective_image_array, pixel_current_height,
+                              pixel_side_height, reference, status_addendum):
+        """ Attempts to identify the control objective progress
+
+        :param full_screen_img_array: Numpy Array of screen shot
+        :param objective_image_array: Numpy Array of potential objective to check
+        :param pixel_current_height: Int of pixel's y value to find objective's current controlling team
+        :param pixel_side_height: Int of pixel's y value to find number of rounds won
+        :param reference: Dictionary of images to check
+        :param status_addendum: String, used for elaborating on the current status e.g. overtime
+        :return: Boolean of successfully identifying objective
+        """
+
         this_side = "neither"
 
         competitive_progress = False
         our_progress = 0
         their_progress = 0
 
-        potential = self.what_image_is_this(new_image_array, reference)
+        potential = self.what_image_is_this(objective_image_array, reference)
         this_status = max(potential.keys(), key=(lambda k: potential[k]))
 
         successfully_identified = potential[this_status] > self.imageThreshold["Control"]
 
         if successfully_identified:
             pixel_to_check = {
-                'current': img_array[pixel_current_height][959],
+                'current': full_screen_img_array[pixel_current_height][959],
                 'left': {
-                    0: img_array[pixel_side_height][774],
-                    1: img_array[pixel_side_height][814]
+                    0: full_screen_img_array[pixel_side_height][774],
+                    1: full_screen_img_array[pixel_side_height][814]
                 },
                 'right': {
-                    0: img_array[pixel_side_height][1146],
-                    1: img_array[pixel_side_height][1106]
+                    0: full_screen_img_array[pixel_side_height][1146],
+                    1: full_screen_img_array[pixel_side_height][1106]
                 }
             }
             if this_status not in ["Locked", "Prepare"]:
@@ -782,7 +791,7 @@ class MapInfo(GameObject):
 
             if (self.objectiveProgress["controlProgress"][1] is None and this_status != "Prepare")\
                     or this_status == "Locked":
-                competitive_progress = self.identify_control_competitive_progress(img_array)
+                competitive_progress = self.identify_control_competitive_progress(full_screen_img_array)
 
             if self.competitive and competitive_progress is not False:
                 our_progress = competitive_progress[0]
@@ -814,6 +823,14 @@ class MapInfo(GameObject):
             return False
 
     def identify_control_competitive_progress(self, img_array, mode="standard"):
+        """ Identifies the competitive control objective progress based on the screen shot
+        Competitive is unique in that the number of rounds won is displayed with digits
+
+        :param img_array: Numpy Array of screen shot
+        :param mode: String, used for specifying debugging or saving for reference
+        :return: Boolean of successfully identifying objective
+        """
+
         offense_found, offense_result = self.identify_control_competitive_side_progress(img_array, "offense", mode)
         defense_found, defense_result = self.identify_control_competitive_side_progress(img_array, "defense", mode)
 
@@ -828,6 +845,14 @@ class MapInfo(GameObject):
             return False
 
     def identify_control_competitive_side_progress(self, img_array, team_side, mode="standard"):
+        """ Identifies a specific team's competitive control objective progress based on the screen shot
+        Competitive is unique in that the number of rounds won is displayed with digits
+
+        :param img_array: Numpy Array of screen shot
+        :param team_side: String of which team to check
+        :param mode: String, used for specifying debugging or saving for reference
+        :return: Boolean of successfully identifying objective
+        """
         dimensions = self.dimensions["control"]["competitive"][team_side + "_score"]
         new_image_array = self.cut_image(img_array, dimensions)
         img = Image.fromarray(new_image_array)
@@ -835,9 +860,8 @@ class MapInfo(GameObject):
 
         if self.debugMode:
             # save image
-            path = "Debug"
             img = Image.fromarray(scaled_image_array)
-            img.save(path + "\\Potential Competitive " + team_side + " Score.png", "PNG")
+            img.save("Debug\\Potential Competitive " + team_side + " Score.png", "PNG")
 
         potential = self.what_image_is_this(scaled_image_array, self.digitReferences)
         this_status = max(potential.keys(), key=(lambda k: potential[k]))
@@ -849,8 +873,16 @@ class MapInfo(GameObject):
             return False, False
 
     def identify_escort_objective_progress(self, img_array, map_type, current_view, mode="standard"):
+        """ Identifies the escort objective progress based on the screen shot
+
+        :param img_array: Numpy Array of screen shot
+        :param map_type: String of map type to be used for cropping dimensions
+        :param current_view: Boolean or String, String is of the view identified when detecting the map
+        :param mode: String, used for specifying debugging or saving for reference
+        :return: Numpy array of objective UI
+        """
         if self.check_competitive and current_view != "Tab":
-            self.competitive = self.identify_competitive(img_array, self.currentMapSide, mode)
+            self.competitive = self.identify_competitive(img_array, mode)
             self.check_competitive = False
             print("Competitive: " + str(self.competitive))
 
@@ -866,10 +898,9 @@ class MapInfo(GameObject):
             potential = self.what_image_is_this(new_image_array, lock_reference)
 
             if mode == "for_reference":
-                path = "Debug"
                 # save image
                 img = Image.fromarray(new_image_array)
-                img.save(path + "\\Potential Locked Objective.png", "PNG")
+                img.save("Debug\\Potential Locked Objective.png", "PNG")
 
             if potential["Locked"] > self.imageThreshold["Assault"]:
                 print("Locked")
@@ -899,7 +930,6 @@ class MapInfo(GameObject):
         dimensions = self.dimensions[map_type][competitive_string]["progress_bar"]
 
         for X in range(0, (dimensions["end_x"] - dimensions["start_x"])):
-
             pixel_to_check = new_image_array[5][X]
             pixel_team = self.team_from_pixel(pixel_to_check, opposite=True)
             if pixel_team != self.currentMapSide:
@@ -915,7 +945,6 @@ class MapInfo(GameObject):
         escort_progress_length = len(self.objectiveProgress["escortProgress"])
 
         # check to see if we can confirm the statistics has started, unlocking the Escort Objective
-
         self.objectiveProgress["escortProgress"].append(percent_complete)
 
         if escort_progress_length > 2:
@@ -952,16 +981,28 @@ class MapInfo(GameObject):
         return new_array
 
     def get_competitive_string(self):
+        """ Returns either "competitive" or "quick" based on competitive boolean
+
+        :return: String
+        """
         if self.competitive:
             return "competitive"
         else:
             return "quick"
 
-    def identify_competitive(self, img_array, team_side, mode="standard"):
+    def identify_competitive(self, img_array, mode="standard"):
+        """ Identifies if the current mode is competitive or not
+
+        :param img_array: Numpy Array of screen shot
+        :param mode: String, used for specifying debugging or saving for reference
+        :return: Boolean if competitive successfully identified
+        """
+
         # check to see if there is a red or blue box (depending on team)
         box_beginning = 0
         box_end = 0
         x_coordinate = 0
+        team_side = self.currentMapSide
         for x_coordinate in range(self.dimensions["competitive"][team_side]["start_x"],
                        self.dimensions["competitive"][team_side]["end_x"]):
             pixel_to_check = img_array[self.dimensions["competitive"][team_side]["y"]][x_coordinate]
@@ -988,15 +1029,21 @@ class MapInfo(GameObject):
         return False
 
     def identify_game_end(self, img_array, mode="standard"):
+        """ Identifies if the game is over by checking for "Victory" or "Defeat"
+
+        :param img_array: Numpy Array of screen shot
+        :param mode: String, used for specifying debugging or saving for reference
+        :return: None
+        """
+
         print("Identify Game End")
         competitive_string = self.get_competitive_string()
         cropped_image_array = self.cut_image(img_array, self.dimensions["game_end"][competitive_string])
 
         if mode == "for_reference":
             # save image
-            path = "Debug"
             img = Image.fromarray(cropped_image_array)
-            img.save(path + "\\" + "Game End Cropped.png", "PNG")
+            img.save("Debug\\" + "Game End Cropped.png", "PNG")
 
         # -- Check for Victory  -- #
         # convert to black and white based on yellow
@@ -1027,11 +1074,18 @@ class MapInfo(GameObject):
                     print("Defeat! :(")
                     self.set_game_over()
         if (mode == "for_reference") and (type(result) is not bool):
-            path = "Debug"
             # save image
-            result.save(path + "\\Game End.png", "PNG")
+            result.save("Debug\\Game End.png", "PNG")
 
     def game_end_format_image(self, image_array, color, mode):
+        """ Identifies if the game is over by checking for "Victory" or "Defeat"
+
+        :param image_array: Numpy Array of screen shot
+        :param color: List of RGB pixels to be used as middle for thresholding
+        :param mode: String, used for specifying debugging or saving for reference
+        :return: None
+        """
+
         cropped_image_array = image_array.copy()
         cropped_image_array.setflags(write=True)
 
@@ -1080,14 +1134,15 @@ class MapInfo(GameObject):
 
         # cut image where entire rows are black
         new_dimensions = {}
-        # cut top edge
+
+        # get dimensions to cut top edge
         for index, this_row in enumerate(rows_to_cut):
             if index != 0:
                 if previous_row + 1 != this_row:
                     new_dimensions["start_y"] = previous_row
                     break
             previous_row = this_row
-        # cut bottom edge
+        # get dimensions to cut bottom edge
         for index, this_row in enumerate(reversed(rows_to_cut)):
             if index != 0:
                 if previous_row - 1 != this_row:
@@ -1113,17 +1168,16 @@ class MapInfo(GameObject):
             return False
 
         # save image
-        path = "Debug"
         img = Image.fromarray(cropped_image_array)
-        img.save(path + "\\" + mode + ".png", "PNG")
+        img.save("Debug\\" + mode + ".png", "PNG")
 
         new_cropped_image_array = self.cut_image(cropped_image_array, new_dimensions)
         img = Image.fromarray(new_cropped_image_array)
         scaled_image_array = self.threshold(np.asarray((img.resize((160, 45), Image.BILINEAR))))
         scaled_image = Image.fromarray(scaled_image_array)
+
         # save image
-        path = "Debug"
-        scaled_image.save(path + "\\" + mode + " scaled.png", "PNG")
+        scaled_image.save("Debug\\" + mode + " scaled.png", "PNG")
 
         if len(scaled_image_array[0]) != len(self.gameEndReference["Victory"][0])\
                 and len(scaled_image_array) != len(self.gameEndReference["Victory"]):
