@@ -43,13 +43,12 @@ class AppController(ApplicationSession):
         config_parser = configparser.ConfigParser()
         config_parser.read(config_file)
 
-        # TODO Fall-backs
         config = {
-            "version": config_parser.get('Standard', 'Version'),
-            "debug_mode": config_parser.get('Standard', 'Debug'),
-            "map": config_parser.get('Debug', 'Map'),
-            "side": config_parser.get('Debug', 'Side'),
-            "start_pixel": int(config_parser.get('Standard', 'StartPixel'),)
+            "version": config_parser.get('Standard', 'Version', fallback=1.22),
+            "debug_mode": config_parser.get('Standard', 'Debug', fallback=0),
+            "map": config_parser.get('Debug', 'Map', fallback="junkertown"),
+            "side": config_parser.get('Debug', 'Side', fallback="offense"),
+            "start_pixel": int(config_parser.get('Standard', 'StartPixel', fallback=0),)
         }
         return config
 
