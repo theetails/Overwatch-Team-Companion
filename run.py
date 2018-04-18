@@ -1,10 +1,12 @@
 from PIL import Image
 import numpy as np
 from os import listdir
+from os.path import isfile
 import subprocess as sp
 import asyncio
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 import configparser
+from shutil import copyfile
 
 from AppUI import AppUI
 from Game import Game
@@ -23,8 +25,10 @@ class AppController(ApplicationSession):
         self.subscription = None
         self.gameObject = None
 
-        # TODO check for file; copy from default if it doesn't exist
         config_file = "options.ini"
+        if not isfile(config_file):
+            copyfile("default_options.ini", config_file)
+
         overwatch_config = self.open_config(config_file)
 
         self.debug_mode = overwatch_config["debug_mode"]
