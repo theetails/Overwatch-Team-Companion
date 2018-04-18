@@ -92,7 +92,7 @@ class MapInfo(GameObject):
         self.calculate_assault_progress_pixels()
 
     def main(self, screen_image_array, current_time):
-        """Process the saved screen shot to see what the current view is (either "Tab" or "Hero Select"
+        """Process the saved screen shot to see what the current view is (either "Tab" or "Hero Select")
 
         :param: screen_image_array: Numpy array of the screen shot
         :param: current_time: String of the current time

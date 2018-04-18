@@ -18,6 +18,13 @@ class AllHeroes(GameObject):
             self.heroesDictionary[x] = Hero(x)
 
     def main(self, screen_image_array, current_time, current_view):
+        """ Process the saved screen shot to see what heroes are selected
+
+        :param screen_image_array: Numpy array of the screen shot
+        :param current_time: String of the current time
+        :param current_view: String of the current view in the screenshot
+        :return None
+        """
         hero_range = []
         if current_view == "Hero Select":
             hero_range = range(1, 7)
@@ -54,9 +61,14 @@ class AllHeroes(GameObject):
                 for hero_number, enemy_hero in self.heroesDictionary.items():
                     if hero_number in range(7, 13):
                         enemy_hero.revert_previous_hero()
-        return current_view
+        return
 
     def heroes_to_list(self):
+        """ Pulls the currently selected heroes and converts them to integers in a list.
+        Also compares this list to the previous list to detect changes
+
+        :return Boolean if the list has changed
+        """
         current_heroes_list = [[], []]
 
         for heroNumber, hero in self.heroesDictionary.items():
@@ -72,6 +84,14 @@ class AllHeroes(GameObject):
             return False
 
     def identify_hero(self, screen_img_array, this_hero, view):
+        """ Identifies the requested hero based on the current view
+
+        :param screen_img_array: Numpy array of the screen shot
+        :param this_hero: Hero object to identify
+        :param view: String of the current view in the screen shot
+        :return Boolean if successfully identified hero
+        """
+
         if view == "Tab":
             hero_coordinates = this_hero.screenPositionTab
         else:
@@ -106,13 +126,22 @@ class AllHeroes(GameObject):
             if view == "Hero Select" and this_hero.slotNumber == 1:
                 result = self.get_hero_from_potential(
                     this_hero, this_hero_img_threshold, self.characterBlurReferences, correct_hero_threshold=0.85)
+
         # 3) check standard array of heroes
         if not result:
             result = self.get_hero_from_potential(this_hero, this_hero_img_threshold, other_hero_references)
         return result
 
-    def get_hero_from_potential(self, this_hero, image, character_references, correct_hero_threshold=0.9):
-        potential = self.what_image_is_this(image, character_references)  # compare to References
+    def get_hero_from_potential(self, this_hero, hero_image, character_references, correct_hero_threshold=0.9):
+        """ Compares the hero image with the references images
+
+        :param this_hero: Hero object to identify
+        :param hero_image: Numpy array of the hero's image to identify
+        :param character_references: Dictionary of reference hero images in list format
+        :param correct_hero_threshold: minimum score needed to confirm hero
+        :return: Boolean if hero successfully identified
+        """
+        potential = self.what_image_is_this(hero_image, character_references)  # compare to References
         this_hero.set_potential(potential)
         identified_hero = max(potential.keys(), key=(lambda k: potential[k]))
         if potential[identified_hero] > correct_hero_threshold:  # if enough pixels are the same

@@ -25,6 +25,10 @@ class Hero:
         self.calculate_screen_position()
 
     def calculate_screen_position(self):
+        """ Calculates this hero's positions in a view when identifying
+
+        :return: None
+        """
 
         character_select_start_y = 624
         character_select_end_y = 666
@@ -55,13 +59,11 @@ class Hero:
         }
 
     def save_debug_data(self, current_time):
-        path = "Debug"
-
         # save image
         img = Image.fromarray(self.currentImageArray)
-        img.save(path + "\\Potential " + current_time + " " + str(self.slotNumber) + ".png", "PNG")
+        img.save("Debug\\Potential " + current_time + " " + str(self.slotNumber) + ".png", "PNG")
         # save potential
-        debug_file = open(path + '\\Potential ' + current_time + " " + str(self.slotNumber) + '.txt', 'w')
+        debug_file = open('Debug\\Potential ' + current_time + " " + str(self.slotNumber) + '.txt', 'w')
         for potentialCharacter, value in sorted(self.potential.items(), key=operator.itemgetter(1), reverse=True):
             line_to_write = str(value) + ': ' + potentialCharacter + '\n'
             debug_file.write(line_to_write)
