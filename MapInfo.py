@@ -394,7 +394,7 @@ class MapInfo(GameObject):
         :param img_array: Numpy array of the image to check
         :return: Boolean if side identified
         """
-        pixel_to_check = img_array[95][95]
+        pixel_to_check = img_array[79][95]
         this_side = self.team_from_pixel(pixel_to_check)
         print(this_side)
 
