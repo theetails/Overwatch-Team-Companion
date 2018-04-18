@@ -42,7 +42,7 @@ class GameObject:
         """ Calculates the median brightness of an image
 
         :param image_array: Numpy Array of image
-        :return: Int of median brightness (0-255)
+        :return: Float of median brightness (0-255)
         """
         balance_array = []
         for each_row in image_array:
@@ -57,7 +57,7 @@ class GameObject:
         """ Calculates the median brightness of an image
 
         :param image_array: Numpy Array of image
-        :param cut_off: Int of median brightness (0-255)
+        :param cut_off: Float of median brightness (0-255)
         :return: Numpy Array of black and white image
         """
         new_array = image_array.copy()
