@@ -22,8 +22,8 @@ class AllHeroes(GameObject):
 
         :param screen_image_array: Numpy array of the screen shot
         :param current_time: String of the current time
-        :param current_view: String of the current view in the screenshot
-        :return None
+        :param current_view: String of the current view in the screen shot
+        :return Boolean if successful identification
         """
         hero_range = []
         if current_view == "Hero Select":
@@ -33,6 +33,9 @@ class AllHeroes(GameObject):
 
         failed_heroes = []
         for hero_number in hero_range:
+            # If more than half of the heroes fail, it is probably because they are still fading in from Tab view
+            if len(failed_heroes) >= 6:
+                return False
             this_hero = self.heroesDictionary[hero_number]
             result = self.identify_hero(screen_image_array, this_hero, current_view)
             if not result:
@@ -61,7 +64,7 @@ class AllHeroes(GameObject):
                 for hero_number, enemy_hero in self.heroesDictionary.items():
                     if hero_number in range(7, 13):
                         enemy_hero.revert_previous_hero()
-        return
+        return True
 
     def heroes_to_list(self):
         """ Pulls the currently selected heroes and converts them to integers in a list.

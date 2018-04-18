@@ -41,7 +41,7 @@ class Game:
             else:
                 side_changed = False
 
-            self.heroes.main(screen_img_array, current_time_string, current_view)
+            heroes_result = self.heroes.main(screen_img_array, current_time_string, current_view)
 
             if map_changed or side_changed:
                 self.map.broadcast_options(broadcaster)
@@ -55,6 +55,10 @@ class Game:
                 heroes_changed = self.heroes.check_for_change()
                 if heroes_changed:
                     self.heroes.broadcast_heroes(broadcaster)
+
+            if not heroes_result:
+                # not enough heroes found, restart loop
+                return self.calculate_sleep_time(start_time)
 
             if current_view == "Tab":
                 self.map.identify_objective_progress(screen_img_array, current_view=current_view)
@@ -75,14 +79,22 @@ class Game:
                                              self.map.currentMapSide, copy.deepcopy(self.map.get_objective_progress()),
                                              self.gameTime.get_verified_game_time(current_time), current_time)
 
-        # Determine sleep time, at least 0.5 seconds to reduce app's required performance
+        return self.calculate_sleep_time(start_time)
+
+    def get_screen(self):
+        screen_img = ImageGrab.grab(bbox=self.bbox)
+        return np.asarray(screen_img)
+
+    @staticmethod
+    def calculate_sleep_time(start_time):
+        """Determine sleep time, at least 0.5 seconds to reduce app's overall cpu usage
+
+        :param start_time: Time object of when this loop started
+        :return: Float of the time to sleep in seconds
+        """
         time_difference = time.time() - start_time
         if time_difference < 0.5:
             sleep_time = 0.5 - time_difference
         else:
             sleep_time = 0
         return sleep_time
-
-    def get_screen(self):
-        screen_img = ImageGrab.grab(bbox=self.bbox)
-        return np.asarray(screen_img)
