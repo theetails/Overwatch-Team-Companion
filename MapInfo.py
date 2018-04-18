@@ -223,7 +223,7 @@ class MapInfo(GameObject):
         if potential[this_map] > self.imageThreshold[view]:
             if self.debugMode:
                 print(str(potential[this_map]) + " " + this_map)
-            
+
             this_map_split = this_map.split("-")
             if self.current_map[0] != this_map_split[0]:
                 print("Map Changed")
