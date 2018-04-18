@@ -17,7 +17,7 @@ class Game:
         self.debugMode = debug_mode
         self.heroes = AllHeroes(game_version, debug_mode)
         self.map = MapInfo(game_version, debug_mode)
-        self.statistics = None
+        # self.statistics = None
         self.gameTime = TimeInfo(game_version, debug_mode)
         self.game_over = True
 
@@ -68,16 +68,16 @@ class Game:
             self.map.identify_objective_progress(screen_img_array)
 
         # game stats tracking
-        if self.statistics is not None:
-            if self.map.objectiveProgress["gameOver"]:
-                self.game_over = True
-                print("Submit Stats and Clear")
-                self.statistics.submit_stats(self.map.objectiveProgress["gameEnd"], current_time)
-                self.statistics = None
-            else:
-                self.statistics.add_snapshot(self.heroes.heroesList, self.map.get_current_map(),
-                                             self.map.currentMapSide, copy.deepcopy(self.map.get_objective_progress()),
-                                             self.gameTime.get_verified_game_time(current_time), current_time)
+        # if self.statistics is not None:
+        #     if self.map.objectiveProgress["gameOver"]:
+        #         self.game_over = True
+        #         print("Submit Stats and Clear")
+        #         self.statistics.submit_stats(self.map.objectiveProgress["gameEnd"], current_time)
+        #         self.statistics = None
+        #     else:
+        #         self.statistics.add_snapshot(self.heroes.heroesList, self.map.get_current_map(),
+        #                                      self.map.currentMapSide, copy.deepcopy(self.map.get_objective_progress()),
+        #                                      self.gameTime.get_verified_game_time(current_time), current_time)
 
         return self.calculate_sleep_time(start_time)
 
