@@ -50,7 +50,7 @@ class MapInfo(GameObject):
         self.gameEndReference = self.read_references("Reference\\GameEnd.txt")
 
         self.imageThreshold = {
-            "Hero Select": 0.85,
+            "Hero Select": 0.87,
             "Tab": 0.9,
             "Assault": 0.88,
             "Control": 0.88,
@@ -221,7 +221,9 @@ class MapInfo(GameObject):
         self.potential = potential
         self.thisMapPotential = potential[this_map]
         if potential[this_map] > self.imageThreshold[view]:
-            # print(str(potential[this_map]) + " " + this_map)
+            if self.debugMode:
+                print(str(potential[this_map]) + " " + this_map)
+            
             this_map_split = this_map.split("-")
             if self.current_map[0] != this_map_split[0]:
                 print("Map Changed")
@@ -693,7 +695,7 @@ class MapInfo(GameObject):
             img_copy[y_coordinate][x_coordinate][2] = debug_color
 
         self.objectiveProgress["assaultPointProgress"] = assault_percent_complete
-        print("Percent Complete: " + assault_percent_complete)
+        print("Percent Complete: " + str(assault_percent_complete))
         if self.debugMode:
             img = Image.fromarray(img_copy)
             img.save("Debug\\Assault Progress.png", "PNG")
