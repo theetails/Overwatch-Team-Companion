@@ -28,19 +28,22 @@ class GameObject:
         return reference_image_dictionary
 
     def threshold(self, image_array):
+        """ Turns an image to black and white based on the median brightness
+
+        :param image_array: Numpy Array of image
+        :return: Numpy Array of processed image
+        """
         balance = self.get_image_balance(image_array)
-
-        # if balance < 160:
-        #     balance = 160
-
-        # ("Balance: " + str(balance))
-        # if 240 < balance < 252:
-        #     balance = 252
         new_array = self.image_to_black_and_white(image_array, balance)
         return new_array
 
     @staticmethod
     def get_image_balance(image_array):
+        """ Calculates the median brightness of an image
+
+        :param image_array: Numpy Array of image
+        :return: Int of median brightness (0-255)
+        """
         balance_array = []
         for each_row in image_array:
             for each_pixel in each_row:
@@ -51,6 +54,12 @@ class GameObject:
 
     @staticmethod
     def image_to_black_and_white(image_array, cut_off):
+        """ Calculates the median brightness of an image
+
+        :param image_array: Numpy Array of image
+        :param cut_off: Int of median brightness (0-255)
+        :return: Numpy Array of black and white image
+        """
         new_array = image_array.copy()
         new_array.setflags(write=1)
         for row_number, each_row in enumerate(new_array):
@@ -63,11 +72,14 @@ class GameObject:
 
     @staticmethod
     def what_image_is_this(captured_image, reference_images_dictionary):
+        """ Compares the captured image to the saved reference images and ranks how similar they are
+
+        :param captured_image: Numpy Array of image in question
+        :param reference_images_dictionary: Dictionary of images (lists) to compare to
+        :return: Dictionary of the scores of the comparisons (0 - 1)
+        """
         matched_array = []
         captured_image_list = captured_image.tolist()
-        # captured_image_string = str(captured_image_list)
-        # captured_image_pixels = captured_image_string.split('],')
-
         total = {}
 
         for item_name, reference_image in reference_images_dictionary.items():
@@ -91,6 +103,8 @@ class GameObject:
         return ratios
 
     def what_word_is_this(self, captured_image, encoded_reference_images_dictionary, letter_string="", loop_count=0):
+        """ Work in Progress
+        """
         # print("what_word_is_this")
         if loop_count == 0:
             # flipped = np.flipud(captured_image)
@@ -157,12 +171,14 @@ class GameObject:
             # print(potential)
             # save
             img = Image.fromarray(captured_image)
-            img.save("Debug\\" + str(loop_count) + " Letter " + str(max_potential) + " " + str(round(potential[max_potential], 2)) + ".png", "PNG")
+            img.save("Debug\\" + str(loop_count) + " Letter " + str(max_potential) + " " +
+                     str(round(potential[max_potential], 2)) + ".png", "PNG")
 
             if potential[max_potential] <= 1:
                 sliced_image = np.delete(captured_image, 0, axis=1)
                 if sliced_image.size != 0:
-                    return self.what_word_is_this(sliced_image, encoded_reference_images_dictionary, letter_string=letter_string, loop_count=loop_count + 1)
+                    return self.what_word_is_this(sliced_image, encoded_reference_images_dictionary,
+                                                  letter_string=letter_string, loop_count=loop_count + 1)
                 else:
                     return letter_string
             else:
@@ -177,7 +193,8 @@ class GameObject:
                 # img.save("Debug\\" + str(loop_count) + " Letter " + str(max_potential) + ".png", "PNG")
 
                 if sliced_image.size > 19 * 6:
-                    return self.what_word_is_this(sliced_image, encoded_reference_images_dictionary, letter_string=letter_string,
+                    return self.what_word_is_this(sliced_image, encoded_reference_images_dictionary,
+                                                  letter_string=letter_string,
                                                   loop_count=loop_count + 1)
                 else:
                     return letter_string
@@ -185,6 +202,9 @@ class GameObject:
             print(exception)
 
     def what_letter_is_this(self, captured_image_list, reference_images_dictionary):
+        """ Work in Progress
+        """
+
         print("what letter is this")
         matched_array = []
         # captured_image_list = captured_image.tolist()
@@ -219,6 +239,8 @@ class GameObject:
 
     @staticmethod
     def score_row(captured_row, reference_row, width):
+        """ Work in Progress
+        """
         print_row = False
         if print_row:
             print(captured_row)
@@ -273,6 +295,8 @@ class GameObject:
 
     @staticmethod
     def run_length_encode(image, pixel_array=False):
+        """ Work in Progress
+        """
         # print(image)
         encoded_image = []
         width = len(image[1])
