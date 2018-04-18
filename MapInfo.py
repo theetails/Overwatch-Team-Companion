@@ -205,7 +205,7 @@ class MapInfo(GameObject):
         section = "normal"
 
         if view == "Hero Select":
-            game_mode_identified = self.identify_game_mode(screen_img_array, view)
+            game_mode_identified = self.identify_game_type(screen_img_array, view)
             if game_mode_identified:
                 # The game mode is an icon to the left of the map's name, causing that name to be pushed to the right
                 section = "extended"
@@ -252,7 +252,13 @@ class MapInfo(GameObject):
         else:
             return False
 
-    def identify_game_mode(self, screen_img_array, view):
+    def identify_game_type(self, screen_img_array, view):
+        """ Processes the screen shot to see if we can identify the game type.
+
+        :param screen_img_array: Numpy array of the screen shot
+        :param view: String of view to check
+        :return: Boolean if game type is identified
+        """
         this_mode_array = self.get_map(screen_img_array, view, section='game_type')
         # img = Image.fromarray(this_mode_array)
         # img.save("Debug\\Game Mode.png", "PNG")
@@ -268,6 +274,12 @@ class MapInfo(GameObject):
             return False
 
     def what_map_reference(self, view, section):
+        """ Returns a portion of the maps to check
+
+        :param view: String
+        :param section: String
+        :return: Dictionary of the maps to check
+        """
         if view == "Tab":
             map_reference = self.mapReferences["Tab"]
         elif section == "normal":
@@ -282,19 +294,31 @@ class MapInfo(GameObject):
         return map_reference
 
     def save_debug_data(self, current_time):
-        path = "Debug"
+        """ Saves the current map to the Debug Folder
+
+        :param current_time: String of the current date and time
+        :return: None
+        """
 
         # save image
         img = Image.fromarray(self.currentImageArray)
-        img.save(path + "\\Potential " + current_time + " map.png", "PNG")
+        img.save("Debug\\Potential " + current_time + " map.png", "PNG")
         if current_time != "for_reference":
             # save potential
-            debug_file = open(path + "\\Potential " + current_time + " map.txt", 'w')
+            debug_file = open("Debug\\Potential " + current_time + " map.txt", 'w')
             for potentialMap, value in sorted(self.potential.items(), key=operator.itemgetter(1), reverse=True):
                 line_to_write = str(value) + ': ' + potentialMap + '\n'
                 debug_file.write(line_to_write)
 
     def get_map(self, img_array, view, section='normal', threshold_balance=False):
+        """ Processes the screen shot to pull out the desired section and filter it
+
+        :param img_array: Numpy array of the screen shot
+        :param view: String of the requested view
+        :param section: String of the specific section of the screen shot requested
+        :param threshold_balance: Boolean if we want to calculated the threshold or not
+        :return: Numpy array of processed screen shot
+        """
         scaled_image_array = None
 
         dimensions = self.dimensions['map'][view][section]
@@ -317,10 +341,17 @@ class MapInfo(GameObject):
             new_image_array = self.threshold(scaled_image_array)
         else:
             new_image_array = self.image_to_black_and_white(scaled_image_array, 252)
+
         return new_image_array
 
     @staticmethod
     def process_image(map_image_array, filter_enabled=True):
+        """ Applies filters and clears edges on provided image array
+
+        :param map_image_array: Numpy array of the image to be filtered
+        :param filter_enabled: Boolean to apply filters
+        :return: Numpy array of processed image
+        """
 
         # straighten letters
         # flipped = np.flipud(map_image_array)
@@ -356,6 +387,11 @@ class MapInfo(GameObject):
         return img_array
 
     def identify_side(self, img_array):
+        """ Processes the image to identifies your team's side
+
+        :param img_array: Numpy array of the image to check
+        :return: Boolean if side identified
+        """
         pixel_to_check = img_array[95][95]
         this_side = self.team_from_pixel(pixel_to_check)
         print(this_side)
@@ -372,12 +408,17 @@ class MapInfo(GameObject):
 
     @staticmethod
     def team_from_pixel(pixel_to_check, opposite=False):
+        """ Identifies a team's side based on the color at a specific pixel
+
+        :param pixel_to_check: Array of the pixel to check
+        :param opposite: Boolean to switch the results
+        :return: String of side identified
+        """
+
         red = pixel_to_check[0]
         green = pixel_to_check[1]
         blue = pixel_to_check[2]
-        # print(red)
-        # print(green)
-        # print(blue)
+
         if (red > 195) and (green < 200) and (blue < 200):  # red
             this_side = "offense"
         elif (red < 200) and (green > 170) and (blue > 100):  # blue
@@ -397,12 +438,16 @@ class MapInfo(GameObject):
 
     @staticmethod
     def team_from_pixel_assault_circle(pixel_to_check, opposite=False):
+        """ Identifies a team's side based on the color at a specific pixel in the objective icon
+
+        :param pixel_to_check: Array of the pixel to check
+        :param opposite: Boolean to switch the results
+        :return: String of side identified
+        """
         red = pixel_to_check[0]
         green = pixel_to_check[1]
         blue = pixel_to_check[2]
-        # print(red)
-        # print(green)
-        # print(blue)
+
         if red > 245 and green < 230 and blue < 240:
             this_side = "offense"
         elif (blue > 230 and green > 170 and red < 205 and int(green) - int(red) > 40) or \
@@ -424,6 +469,13 @@ class MapInfo(GameObject):
 
     @staticmethod
     def team_from_pixel_precise(pixel_to_check, opposite=False):
+        """ Identifies a team's side based on the color at a specific pixel.
+        This function also checks ranges between colors
+
+        :param pixel_to_check: Array of the pixel to check
+        :param opposite: Boolean to switch the results
+        :return: String of side identified
+        """
         red = pixel_to_check[0]
         green = pixel_to_check[1]
         blue = pixel_to_check[2]
@@ -449,6 +501,13 @@ class MapInfo(GameObject):
         return this_side
 
     def identify_objective_progress(self, img_array, mode="standard", current_view=False):
+        """ Identifies the objective progress based on the screen shot
+
+        :param img_array: Numpy Array of screen shot
+        :param mode: String, used for specifying debugging or saving for reference
+        :param current_view: Boolean or String, String is of the view identified when detecting the map
+        :return: Boolean if identification was attempted
+        """
         if "gameOver" not in self.objectiveProgress:
             return False
         if self.current_map == [None] or self.objectiveProgress["gameOver"] is True:
@@ -477,7 +536,20 @@ class MapInfo(GameObject):
             img = Image.fromarray(new_image_array)
             img.save(path + "\\Potential Objective.png", "PNG")
 
+        return True
+
     def identify_assault_objective_progress(self, img_array, map_type, current_view, mode="standard", loop_count=0):
+        """ Identifies the objective progress based on the screen shot
+
+        :param img_array: Numpy Array of screen shot
+        :param map_type: String of map type to be used for cropping dimensions
+        :param current_view: Boolean or String, String is of the view identified when detecting the map
+        :param mode: String, used for specifying debugging or saving for reference
+        :param loop_count: Integer of how many times this function has called itself
+        :return: None if transitioning, Numpy array of objective UI otherwise
+        """
+
+        # The only time to check if this is a competitive mode is immediately after a tab view
         if self.check_competitive and current_view != "Tab":
             self.competitive = self.identify_competitive(img_array, self.currentMapSide, mode)
             self.check_competitive = False
@@ -510,7 +582,7 @@ class MapInfo(GameObject):
                 img = Image.fromarray(new_image_array)
                 img.save(path + "\\Potential Assault Point 1 " + str(loop_count) + ".png", "PNG")
 
-            if potential[this_status] > self.imageThreshold["Assault"]:  # max 166?
+            if potential[this_status] > self.imageThreshold["Assault"]:
                 check_game_end = False
                 self.competitive_confirmed = True
                 this_status_split = this_status.split("-")
@@ -519,7 +591,7 @@ class MapInfo(GameObject):
                     if map_type == "transition":
                         print("Transition to Escort")
                         self.objectiveProgress["currentType"] = "escort"
-                        return
+                        return  # will now enter identify_escort_objective_progress
                     else:
                         check_assault_point2 = True
                 elif this_status != "Locked":
@@ -539,7 +611,7 @@ class MapInfo(GameObject):
                     self.competitive_confirmed = True
                     print("Transition to Escort")
                     self.objectiveProgress["currentType"] = "escort"
-                    return
+                    return  # will now enter identify_escort_objective_progress
                 else:
                     check_game_end = True
         if check_assault_point2:
@@ -584,6 +656,16 @@ class MapInfo(GameObject):
         return new_image_array
 
     def identify_assault_point_progress(self, img_array, map_type, competitive_string, point_number, mode="standard"):
+        """ Identifies the objective progress based on the screen shot
+
+        :param img_array: Numpy Array of screen shot
+        :param map_type: String of map type to be used for cropping dimensions
+        :param competitive_string: String of whether the mode is competitive
+        :param point_number: Int of point to check
+        :param mode: String, used for specifying debugging or saving for reference
+        :return: None
+        """
+
         assault_percent_complete = 0
         img_copy = img_array.copy()
         img_copy.setflags(write=1)
@@ -614,13 +696,20 @@ class MapInfo(GameObject):
             img_copy[y_coordinate][x_coordinate][2] = debug_color
 
         self.objectiveProgress["assaultPointProgress"] = assault_percent_complete
-        print(assault_percent_complete)
+        print("Percent Complete: " + assault_percent_complete)
         if self.debugMode:
             path = "Debug"
             img = Image.fromarray(img_copy)
             img.save(path + "\\Assault Progress.png", "PNG")
 
     def identify_control_objective_progress(self, img_array, mode="standard"):
+        """ Identifies the objective progress based on the screen shot
+
+        :param img_array: Numpy Array of screen shot
+        :param mode: String, used for specifying debugging or saving for reference
+        :return: Numpy array of objective UI
+        """
+
         pixel_current_height = 118
         pixel_side_height = 91
         reference = self.controlReference
@@ -661,18 +750,6 @@ class MapInfo(GameObject):
             self.objectiveProgress["unlocked"] = False
 
         return new_image_array
-
-    @staticmethod
-    def invert_image_array(image_array):
-        new_array = image_array.copy()
-        new_array.setflags(write=1)
-        for row_index, row in enumerate(image_array):
-            for pixel_index, pixel in enumerate(row):
-                if pixel[0] == 0:
-                    new_array[row_index][pixel_index] = [255, 255, 255]
-                else:
-                    new_array[row_index][pixel_index] = [0, 0, 0]
-        return new_array
 
     def identify_control_core(self, img_array, new_image_array, pixel_current_height, pixel_side_height, reference,
                               status_addendum):
@@ -861,6 +938,18 @@ class MapInfo(GameObject):
             self.identify_game_end(img_array, mode)
 
         return new_image_array
+
+    @staticmethod
+    def invert_image_array(image_array):
+        new_array = image_array.copy()
+        new_array.setflags(write=1)
+        for row_index, row in enumerate(image_array):
+            for pixel_index, pixel in enumerate(row):
+                if pixel[0] == 0:
+                    new_array[row_index][pixel_index] = [255, 255, 255]
+                else:
+                    new_array[row_index][pixel_index] = [0, 0, 0]
+        return new_array
 
     def get_competitive_string(self):
         if self.competitive:
