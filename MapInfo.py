@@ -64,6 +64,7 @@ class MapInfo(GameObject):
         self.current_map = [None]
         self.currentMapSide = "offense"
         self.mapChange = False
+        self.map_transitioned = False  # for broadcasting new map type
 
         self.previousMap = [None]
         self.previousMapSide = None
@@ -516,6 +517,8 @@ class MapInfo(GameObject):
             return False
         map_type = self.map_type()
         new_image_array = None
+        self.map_transitioned = False
+
         if map_type == "transition":
             # need to go from assault to escort
             if self.objectiveProgress["currentType"] is None:
@@ -591,6 +594,7 @@ class MapInfo(GameObject):
                     if map_type == "transition":
                         print("Transition to Escort")
                         self.objectiveProgress["currentType"] = "escort"
+                        self.map_transitioned = True
                         return  # will now enter identify_escort_objective_progress
                     else:
                         check_assault_point2 = True
@@ -611,6 +615,7 @@ class MapInfo(GameObject):
                     self.competitive_confirmed = True
                     print("Transition to Escort")
                     self.objectiveProgress["currentType"] = "escort"
+                    self.map_transitioned = True
                     return  # will now enter identify_escort_objective_progress
                 else:
                     check_game_end = True

@@ -36,6 +36,7 @@ class Game:
 
             # check if map or side changed
             map_changed = self.map.mapChange
+            map_transitioned = self.map.map_transitioned
             if current_view == "Hero Select":
                 side_changed = self.map.identify_side(screen_img_array)
             else:
@@ -43,14 +44,14 @@ class Game:
 
             heroes_result = self.heroes.main(screen_img_array, current_time_string, current_view)
 
-            if map_changed or side_changed:
+            if map_changed or side_changed or map_transitioned:
                 self.map.broadcast_options(broadcaster)
                 self.map.reset_objective_progress()
                 self.game_over = False
             if map_changed and current_view == "Hero Select":
                 print("ClearEnemyHeroes")
                 self.heroes.clear_enemy_heroes(broadcaster)
-                self.statistics = Statistics(self.debugMode)
+                # self.statistics = Statistics(self.debugMode)
             else:  # because clear_enemy_heroes already broadcasts heroes
                 heroes_changed = self.heroes.check_for_change()
                 if heroes_changed:
