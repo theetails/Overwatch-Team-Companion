@@ -30,6 +30,9 @@ class AppController(ApplicationSession):
 
         self.debug_mode = overwatch_config["debug_mode"]
         self.game_version = overwatch_config["version"]
+        if float(self.game_version) < 1.23:
+            self.game_version = "1.23"
+
         self.bbox = (overwatch_config["start_pixel"], 0, overwatch_config["start_pixel"] + 1920, 1080)
 
         self.this_map = overwatch_config["map"]
@@ -140,8 +143,13 @@ class AppController(ApplicationSession):
         screen_img_array = this_game_object.get_screen()
 
         this_mode_array = this_game_object.map.get_map(screen_img_array, view, section='game_type')
-        img = Image.fromarray(this_mode_array)
-        img.save("Debug\\Potential " + "game_type" + " " + "for_reference" + " map.png", "PNG")
+
+        potential = this_game_object.map.what_image_is_this(this_mode_array, this_game_object.map.mapReferences['Game Type'])
+        this_game_mode = max(potential.keys(), key=(lambda k: potential[k]))
+        if potential[this_game_mode] > this_game_object.map.imageThreshold["Game Type"]:
+            this_game_mode_split = this_game_mode.split("-")
+            this_game_object.map.game_mode = this_game_mode_split[0]
+        this_game_object.map.save_debug_data("game_type", "for_reference", this_mode_array, potential)
 
         this_game_object.map.currentImageArray = this_game_object.map.get_map(
             screen_img_array, view, section=section)  # , threshold_balance=True)
@@ -154,6 +162,10 @@ class AppController(ApplicationSession):
         this_game_object = Game(self.game_version, self.bbox, self.debug_mode)
         screen_img_array = this_game_object.get_screen()
         this_game_object.map.currentImageArray = this_game_object.map.get_map(screen_img_array, "Tab", section='normal')
+
+        map_reference = this_game_object.map.what_map_reference("Tab", "normal")
+        this_game_object.map.potential = this_game_object.map.what_image_is_this(this_game_object.map.currentImageArray,
+                                                                                 map_reference)
         this_game_object.map.save_debug_data("normal", "for_reference")
         print("Done")
 
@@ -170,8 +182,9 @@ class AppController(ApplicationSession):
 
         reference_string = [
             'Reference\\Letters.txt',
-            'Reference\\MapImageListStandard.txt',
+            'Reference\\MapImageListAssault.txt',
             'Reference\\MapImageListControl.txt',
+            'Reference\\MapImageListEscort.txt',
             'Reference\\MapImageListArena.txt',
             'Reference\\MapImageListHybrid.txt',
             'Reference\\MapImageHighThreshold.txt',
@@ -183,8 +196,9 @@ class AppController(ApplicationSession):
         ]
         path = [
             "Reference\\Letters",
-            "Reference\\Map Name Image Sources\\Standard",
+            "Reference\\Map Name Image Sources\\Assault",
             "Reference\\Map Name Image Sources\\Control",
+            "Reference\\Map Name Image Sources\\Escort",
             "Reference\\Map Name Image Sources\\Arena",
             "Reference\\Map Name Image Sources\\Hybrid",
             "Reference\\Map Name Image Sources High Threshold",
