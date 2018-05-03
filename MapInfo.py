@@ -269,7 +269,8 @@ class MapInfo(GameObject):
         this_game_mode = max(potential.keys(), key=(lambda k: potential[k]))
         if potential[this_game_mode] > self.imageThreshold["Game Type"]:
             self.previous_game_mode = self.game_mode
-            self.game_mode = this_game_mode
+            this_game_mode_split = this_game_mode.split("-")
+            self.game_mode = this_game_mode_split[0]
             print(this_game_mode + " " + str(potential[this_game_mode]))
             #  Hero Select Confirmed
             return True
@@ -296,19 +297,20 @@ class MapInfo(GameObject):
                 map_reference = self.mapReferences["Hero Select Arena"]
         return map_reference
 
-    def save_debug_data(self, current_time):
+    def save_debug_data(self, section, current_time):
         """ Saves the current map to the Debug Folder
 
+        :param section: String of the current date and time
         :param current_time: String of the current date and time
         :return: None
         """
 
         # save image
         img = Image.fromarray(self.currentImageArray)
-        img.save("Debug\\Potential " + current_time + " map.png", "PNG")
-        if current_time != "for_reference":
+        img.save("Debug\\Potential " + section + " " + current_time + " map.png", "PNG")
+        if section != "game_type":
             # save potential
-            debug_file = open("Debug\\Potential " + current_time + " map.txt", 'w')
+            debug_file = open("Debug\\Potential " + section + " " + current_time + " map.txt", 'w')
             for potentialMap, value in sorted(self.potential.items(), key=operator.itemgetter(1), reverse=True):
                 line_to_write = str(value) + ': ' + potentialMap + '\n'
                 debug_file.write(line_to_write)

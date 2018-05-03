@@ -133,18 +133,28 @@ class AppController(ApplicationSession):
         print("Done")
 
     def create_images_for_map_reference_hero_select(self):
+        view = "Hero Select"
+        section = "extended"
+
         this_game_object = Game(self.game_version, self.bbox, self.debug_mode)
         screen_img_array = this_game_object.get_screen()
+
+        this_mode_array = this_game_object.map.get_map(screen_img_array, view, section='game_type')
+        img = Image.fromarray(this_mode_array)
+        img.save("Debug\\Potential " + "game_type" + " " + "for_reference" + " map.png", "PNG")
+
         this_game_object.map.currentImageArray = this_game_object.map.get_map(
-            screen_img_array, "Hero Select", section='extended')  # , threshold_balance=True)
-        this_game_object.map.save_debug_data("for_reference")
+            screen_img_array, view, section=section)  # , threshold_balance=True)
+        map_reference = this_game_object.map.what_map_reference(view, section)
+        this_game_object.map.potential = this_game_object.map.what_image_is_this(this_game_object.map.currentImageArray, map_reference)
+        this_game_object.map.save_debug_data(section, "for_reference")
         print("Done")
 
     def create_images_for_map_reference_tab(self):
         this_game_object = Game(self.game_version, self.bbox, self.debug_mode)
         screen_img_array = this_game_object.get_screen()
         this_game_object.map.currentImageArray = this_game_object.map.get_map(screen_img_array, "Tab", section='normal')
-        this_game_object.map.save_debug_data("for_reference")
+        this_game_object.map.save_debug_data("normal", "for_reference")
         print("Done")
 
     def create_images_for_map_reference_objective(self):
