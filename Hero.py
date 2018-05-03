@@ -24,6 +24,8 @@ class Hero:
         self.slotNumber = this_slot_number
         self.calculate_screen_position()
 
+        self.hero_changed = False
+
     def calculate_screen_position(self):
         """ Calculates this hero's positions in a view when identifying
 
@@ -79,9 +81,10 @@ class Hero:
     def set_hero(self, hero):
         self.previousHero = self.currentHero
         self.currentHero = hero
+        self.hero_changed = True
 
     def revert_previous_hero(self):
-        if self.previousHero is not None:
+        if self.previousHero is not None and self.hero_changed:
             self.currentHero = self.previousHero
             self.previousHero = None
             self.potential = self.previousPotential

@@ -25,6 +25,7 @@ class AllHeroes(GameObject):
         :param current_view: String of the current view in the screen shot
         :return Boolean if successful identification
         """
+
         hero_range = []
         if current_view == "Hero Select":
             hero_range = range(1, 7)
@@ -37,6 +38,8 @@ class AllHeroes(GameObject):
             if len(failed_heroes) >= 6:
                 return False
             this_hero = self.heroesDictionary[hero_number]
+            this_hero.hero_changed = False  # To prevent reverting to previous hero
+
             result = self.identify_hero(screen_image_array, this_hero, current_view)
             if not result:
                 failed_heroes.append(hero_number)
