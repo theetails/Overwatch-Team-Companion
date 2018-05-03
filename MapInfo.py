@@ -25,7 +25,8 @@ class MapInfo(GameObject):
             # control
             "ilios": "control", "lijiang tower": "control", "nepal": "control", "oasis": "control",
             # escort
-            "dorado": "escort", "junkertown": "escort", "route 66": "escort", "watchpoint gibraltar": "escort",
+            "dorado": "escort", "junkertown": "escort", "rialto": "escort", "route 66": "escort",
+            "watchpoint gibraltar": "escort",
             # arena
             "ayutthaya": "arena", "black forest": "arena", "castillo": "arena", "chateau guillard": "arena",
             "ecopoint antarctica": "arena", "ilios lighthouse": "arena", "ilios ruins": "arena", "ilios well": "arena",
@@ -34,8 +35,9 @@ class MapInfo(GameObject):
             "oasis city center": "arena", "oasis gardens": "arena", "oasis university": "arena"
         }
         self.mapReferences = {
-            "Hero Select Standard": self.read_references("Reference\\MapImageListStandard.txt"),
+            "Hero Select Assault": self.read_references("Reference\\MapImageListAssault.txt"),
             "Hero Select Control": self.read_references("Reference\\MapImageListControl.txt"),
+            "Hero Select Escort": self.read_references("Reference\\MapImageListEscort.txt"),
             "Hero Select Hybrid": self.read_references("Reference\\MapImageListHybrid.txt"),
             "Hero Select Arena": self.read_references("Reference\\MapImageListArena.txt"),
             "Tab": self.read_references("Reference\\MapImageListTab.txt"),
@@ -56,7 +58,7 @@ class MapInfo(GameObject):
             "Control": 0.88,
             "Victory": 0.88,
             "Defeat": 0.88,
-            "Game Type": 0.83
+            "Game Type": 0.855
         }
 
         self.current_map_state = MapState()
@@ -100,13 +102,13 @@ class MapInfo(GameObject):
         :return: string (view) if found, or boolean (False)
         """
         # check if Tab View
-        map_result = self.identify_map(screen_image_array, "Tab")
+        map_result = self.identify_map(screen_image_array, "Tab", current_time)
         if map_result:
             this_view = "Tab"
             self.check_competitive = True
         else:
             # check if Hero Select View
-            map_result = self.identify_map(screen_image_array, "Hero Select")
+            map_result = self.identify_map(screen_image_array, "Hero Select", current_time)
             if map_result:
                 this_view = "Hero Select"
                 self.check_competitive = True
@@ -195,11 +197,12 @@ class MapInfo(GameObject):
         else:
             return self.mapDictionary[self.current_map[0]]
 
-    def identify_map(self, screen_img_array, view):
+    def identify_map(self, screen_img_array, view, current_time):
         """ Processes the screen shot to see if we are in a requested view.
 
         :param screen_img_array: Numpy array of the screen shot
         :param view: String of view to check
+        :param: current_time: String of the current time
         :return: Boolean if map (and thus view) is identified
         """
         potential = None
@@ -234,6 +237,8 @@ class MapInfo(GameObject):
             self.previousMap = self.current_map
             self.current_map = this_map_split
             return True
+        elif section == "extended" and self.debugMode:
+            self.save_debug_data(section, current_time)
         # elif view == "Hero Select":
         #     # Some maps have a mostly white cloud background that moves
         #     this_map_array = self.get_map(screen_img_array, view, section=section, threshold_balance=True)
@@ -287,33 +292,43 @@ class MapInfo(GameObject):
         if view == "Tab":
             map_reference = self.mapReferences["Tab"]
         elif section == "normal":
-            map_reference = self.mapReferences["Hero Select Standard"]
+            map_reference = self.mapReferences["Hero Select Assault"]
         else:
             if self.game_mode == "control":
                 map_reference = self.mapReferences["Hero Select Control"]
+            elif self.game_mode == "escort":
+                map_reference = self.mapReferences["Hero Select Escort"]
             elif self.game_mode == "transition":
                 map_reference = self.mapReferences["Hero Select Hybrid"]
             else:
                 map_reference = self.mapReferences["Hero Select Arena"]
         return map_reference
 
-    def save_debug_data(self, section, current_time):
+    def save_debug_data(self, section, current_time, current_image_array=None, potential=None):
         """ Saves the current map to the Debug Folder
 
         :param section: String of the current date and time
         :param current_time: String of the current date and time
+        :param current_image_array: Image array to be saved
+        :param potential: array of potential maps to be saved
         :return: None
         """
 
+        if current_image_array is None:
+            current_image_array = self.currentImageArray
+
+        if potential is None:
+            potential = self.potential
+
         # save image
-        img = Image.fromarray(self.currentImageArray)
+        img = Image.fromarray(current_image_array)
         img.save("Debug\\Potential " + section + " " + current_time + " map.png", "PNG")
-        if section != "game_type":
-            # save potential
-            debug_file = open("Debug\\Potential " + section + " " + current_time + " map.txt", 'w')
-            for potentialMap, value in sorted(self.potential.items(), key=operator.itemgetter(1), reverse=True):
-                line_to_write = str(value) + ': ' + potentialMap + '\n'
-                debug_file.write(line_to_write)
+
+        # save potential
+        debug_file = open("Debug\\Potential " + section + " " + current_time + " map.txt", 'w')
+        for potentialMap, value in sorted(potential.items(), key=operator.itemgetter(1), reverse=True):
+            line_to_write = str(value) + ': ' + potentialMap + '\n'
+            debug_file.write(line_to_write)
 
     def get_map(self, img_array, view, section='normal', threshold_balance=False):
         """ Processes the screen shot to pull out the desired section and filter it
@@ -1245,7 +1260,7 @@ class MapInfo(GameObject):
 
     def dimensions_from_version(self):
         dimensions = {
-            "1.22": {
+            "1.23": {
                 "assault": {
                     "quick": {
                         "point1": {
