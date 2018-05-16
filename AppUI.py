@@ -62,11 +62,15 @@ class AppUI(tkinter.Tk):
         group_id_entry_label.pack(side="left")
         group_id_entry = tkinter.Entry(group_id_entry_window, width=20)
         group_id_entry.pack(side="left")
-        submit_group_id = tkinter.Button(group_id_entry_window, text="Submit",
+        submit_group_id = tkinter.Button(group_id_entry_window, text="Join",
                                          command=lambda: self.check_group_id(group_id_entry))
         submit_group_id.pack(side="left")
         self.errorMessageLabel = tkinter.Label(error_window, text="", fg="red")
         self.errorMessageLabel.pack()
+
+        def return_pressed(event):
+            self.check_group_id(group_id_entry)
+        self.bind('<Return>', return_pressed)
 
     def check_group_id(self, entry):
         entry_text = entry.get()
