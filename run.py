@@ -103,10 +103,12 @@ class AppController(ApplicationSession):
         reference_string = [
             'Reference\\HeroImageList.txt',
             'Reference\\HeroImageBlurList.txt',
+            'Reference\\RespawnFilter.txt',
         ]
         path = [
             "Reference\\Hero Image Sources",
-            "Reference\\Hero Image Blur Sources"
+            "Reference\\Hero Image Blur Sources",
+            "Reference\\Respawn Filter Source"
         ]
 
         for x in range(0, len(reference_string)):
@@ -122,6 +124,21 @@ class AppController(ApplicationSession):
                 condensed_source_image_list = self.condense_image(source_image_list)
                 line_to_write = file[:-4] + '::' + str(condensed_source_image_list) + '\n'
                 reference_images_file.write(line_to_write)
+
+        reference_images_file = open('Reference\\HeroImageListX.txt', 'w')
+        reference_images = [image for image in listdir("Reference\\Hero Image Sources X")]
+        for file in reference_images:
+            image_path = "Reference\\Hero Image Sources X" + "/" + file
+            source_image = Image.open(image_path)
+            source_image_array = np.array(source_image)
+            threshold_image_array = this_game_object.heroes.threshold(source_image_array, respawn_filter=True)
+            # img = Image.fromarray(threshold_image_array)
+            # img.save("Debug\\Z " + file[:-4] + ".png", "PNG")
+            source_image_list = threshold_image_array.tolist()
+            condensed_source_image_list = self.condense_image(source_image_list)
+            line_to_write = file[:-4] + '::' + str(condensed_source_image_list) + '\n'
+            reference_images_file.write(line_to_write)
+
         print("Done")
 
     def create_images_for_hero_reference(self):

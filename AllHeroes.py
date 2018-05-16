@@ -11,7 +11,9 @@ class AllHeroes(GameObject):
         self.game_version = game_version
         self.debugMode = debug_mode
         self.characterReferences = self.read_references("Reference\\HeroImageList.txt")
+        self.characterReferencesX = self.read_references("Reference\\HeroImageListX.txt")
         self.characterBlurReferences = self.read_references("Reference\\HeroImageBlurList.txt")
+        self.respawnFilter = self.read_references("Reference\\RespawnFilter.txt")
         self.heroesDictionary = {}
         self.heroesList = []
         for x in range(1, 13):
@@ -109,10 +111,13 @@ class AllHeroes(GameObject):
                         ]  # crop to Hero
         # Make Black & White based off average value
         this_hero_img_threshold = self.threshold(np.asarray(this_hero_img))
+        this_hero_img_threshold_respawning = self.threshold(np.asarray(this_hero_img), respawn_filter=True)
         this_hero.set_image_array(this_hero_img)  # save IMG to Hero
 
         this_hero_references = {}
+        this_hero_references_x = {}
         other_hero_references = {}
+        other_hero_references_x = {}
 
         # 1) check if it is the same hero as previously
         if this_hero.currentHero is not None:
@@ -123,8 +128,19 @@ class AllHeroes(GameObject):
                 else:
                     other_hero_references[character] = reference
             result = self.get_hero_from_potential(this_hero, this_hero_img_threshold, this_hero_references)
+            if not result:
+                # check if respawning
+                for character, reference in self.characterReferencesX.items():
+                    character_split = character.split("-")
+                    if character_split[0] == this_hero.currentHero:
+                        this_hero_references_x[character] = reference
+                    else:
+                        other_hero_references_x[character] = reference
+                result = self.get_hero_from_potential(this_hero, this_hero_img_threshold_respawning, this_hero_references_x,
+                                                      respawn_filter=True)
         else:
             other_hero_references = self.characterReferences
+            other_hero_references_x = self.characterReferencesX
             result = False
 
         # 2) check for blurred versions if on hero select and slot number is 1
@@ -136,18 +152,24 @@ class AllHeroes(GameObject):
         # 3) check standard array of heroes
         if not result:
             result = self.get_hero_from_potential(this_hero, this_hero_img_threshold, other_hero_references)
+            if not result:
+                # check if respawning
+                result = self.get_hero_from_potential(this_hero, this_hero_img_threshold_respawning,
+                                                      other_hero_references_x, respawn_filter=True)
         return result
 
-    def get_hero_from_potential(self, this_hero, hero_image, character_references, correct_hero_threshold=0.9):
+    def get_hero_from_potential(self, this_hero, hero_image, character_references, correct_hero_threshold=0.9,
+                                respawn_filter=False):
         """ Compares the hero image with the references images
 
         :param this_hero: Hero object to identify
         :param hero_image: Numpy array of the hero's image to identify
         :param character_references: Dictionary of reference hero images in list format
         :param correct_hero_threshold: minimum score needed to confirm hero
+        :param respawn_filter: Boolean to apply respawn filter
         :return: Boolean if hero successfully identified
         """
-        potential = self.what_image_is_this(hero_image, character_references)  # compare to References
+        potential = self.what_image_is_this(hero_image, character_references, respawn_filter)  # compare to References
         this_hero.set_potential(potential)
         identified_hero = max(potential.keys(), key=(lambda k: potential[k]))
         if potential[identified_hero] > correct_hero_threshold:  # if enough pixels are the same
