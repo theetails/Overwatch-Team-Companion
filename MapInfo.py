@@ -348,8 +348,8 @@ class MapInfo(GameObject):
 
         if view == "Hero Select":
             if section != 'game_type':
-                img = Image.fromarray(map_image_array)
-                img.save("Debug\\Full Original Map.png", "PNG")
+                # img = Image.fromarray(map_image_array)
+                # img.save("Debug\\Full Original Map.png", "PNG")
                 processed_image_array = self.process_image(map_image_array, filter_enabled=True)
                 scaled_image_array = imresize(processed_image_array, (19, 180))
             else:
