@@ -162,7 +162,7 @@ class AllHeroes(GameObject):
         return result
 
     def get_hero_from_potential(self, this_hero, hero_image, character_references, all_potential,
-                                correct_hero_threshold=0.9, respawn_filter=False):
+                                correct_hero_threshold=0.89, respawn_filter=False):
         """ Compares the hero image with the references images
 
         :param this_hero: Hero object to identify
