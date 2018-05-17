@@ -114,6 +114,7 @@ class AllHeroes(GameObject):
         this_hero_img_threshold_respawning = self.threshold(np.asarray(this_hero_img), respawn_filter=True)
         this_hero.set_image_array(this_hero_img)  # save IMG to Hero
 
+        all_potential = {}
         this_hero_references = {}
         this_hero_references_x = {}
         other_hero_references = {}
@@ -127,7 +128,8 @@ class AllHeroes(GameObject):
                     this_hero_references[character] = reference
                 else:
                     other_hero_references[character] = reference
-            result = self.get_hero_from_potential(this_hero, this_hero_img_threshold, this_hero_references)
+            result = self.get_hero_from_potential(this_hero, this_hero_img_threshold, this_hero_references,
+                                                  all_potential)
             if not result:
                 # check if respawning
                 for character, reference in self.characterReferencesX.items():
@@ -136,8 +138,8 @@ class AllHeroes(GameObject):
                         this_hero_references_x[character] = reference
                     else:
                         other_hero_references_x[character] = reference
-                result = self.get_hero_from_potential(this_hero, this_hero_img_threshold_respawning, this_hero_references_x,
-                                                      respawn_filter=True)
+                result = self.get_hero_from_potential(this_hero, this_hero_img_threshold_respawning,
+                                                      this_hero_references_x, all_potential, respawn_filter=True)
         else:
             other_hero_references = self.characterReferences
             other_hero_references_x = self.characterReferencesX
@@ -146,31 +148,37 @@ class AllHeroes(GameObject):
         # 2) check for blurred versions if on hero select and slot number is 1
         if not result:
             if view == "Hero Select" and this_hero.slotNumber == 1:
-                result = self.get_hero_from_potential(
-                    this_hero, this_hero_img_threshold, self.characterBlurReferences, correct_hero_threshold=0.85)
+                result = self.get_hero_from_potential(this_hero, this_hero_img_threshold, self.characterBlurReferences,
+                                                      all_potential, correct_hero_threshold=0.85)
 
         # 3) check standard array of heroes
         if not result:
-            result = self.get_hero_from_potential(this_hero, this_hero_img_threshold, other_hero_references)
+            result = self.get_hero_from_potential(this_hero, this_hero_img_threshold, other_hero_references,
+                                                  all_potential)
             if not result:
                 # check if respawning
                 result = self.get_hero_from_potential(this_hero, this_hero_img_threshold_respawning,
-                                                      other_hero_references_x, respawn_filter=True)
+                                                      other_hero_references_x, all_potential, respawn_filter=True)
         return result
 
-    def get_hero_from_potential(self, this_hero, hero_image, character_references, correct_hero_threshold=0.9,
-                                respawn_filter=False):
+    def get_hero_from_potential(self, this_hero, hero_image, character_references, all_potential,
+                                correct_hero_threshold=0.9, respawn_filter=False):
         """ Compares the hero image with the references images
 
         :param this_hero: Hero object to identify
         :param hero_image: Numpy array of the hero's image to identify
         :param character_references: Dictionary of reference hero images in list format
+        :param all_potential: Dictionary of potentials (for debug saving)
         :param correct_hero_threshold: minimum score needed to confirm hero
         :param respawn_filter: Boolean to apply respawn filter
         :return: Boolean if hero successfully identified
         """
         potential = self.what_image_is_this(hero_image, character_references, respawn_filter)  # compare to References
-        this_hero.set_potential(potential)
+
+        for name, name_potential in potential.items():
+            all_potential[name] = name_potential
+        this_hero.set_potential(all_potential)
+
         identified_hero = max(potential.keys(), key=(lambda k: potential[k]))
         if potential[identified_hero] > correct_hero_threshold:  # if enough pixels are the same
             this_hero_split = identified_hero.split("-")
