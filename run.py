@@ -148,8 +148,12 @@ class AppController(ApplicationSession):
         hero_range = {"Hero Select": 7, "Tab": 13}
         for heroNumber in range(1, hero_range[current_view]):
             hero = this_game_object.heroes.heroesDictionary[heroNumber]
-            this_game_object.heroes.identify_hero(screen_img_array, hero, current_view)
+            result = this_game_object.heroes.identify_hero(screen_img_array, hero, current_view)
             hero.save_debug_data("for_reference")
+            if not result:
+                print(str(heroNumber) + " Failed")
+            else:
+                print(hero.currentHero)
         print("Done")
 
     def create_images_for_map_reference_hero_select(self):
