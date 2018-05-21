@@ -183,8 +183,8 @@ class AllHeroes(GameObject):
         if potential[identified_hero] > correct_hero_threshold:  # if enough pixels are the same
             this_hero_split = identified_hero.split("-")
             this_hero.set_hero(this_hero_split[0])
-            if this_hero.slotNumber == 1 and (this_hero_split[0] == "searching" or this_hero_split[0] == "unknown"):
-                # The player cannot be "searching" or "unknown", reduces errors
+            if this_hero.slotNumber == 1 and this_hero_split[0] == "searching":
+                # The player cannot be "searching", reduces errors
                 return False
             else:
                 return True
