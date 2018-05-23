@@ -32,7 +32,7 @@ class MapInfo(GameObject):
             "ecopoint antarctica": "arena", "ilios lighthouse": "arena", "ilios ruins": "arena", "ilios well": "arena",
             "lijiang control center": "arena", "lijiang garden": "arena", "lijiang night market": "arena",
             "necropolis": "arena", "nepal sanctum": "arena", "nepal shrine": "arena", "nepal village": "arena",
-            "oasis city center": "arena", "oasis gardens": "arena", "oasis university": "arena"
+            "oasis city center": "arena", "oasis gardens": "arena", "oasis university": "arena", "petra": "arena",
         }
         self.mapReferences = {
             "Hero Select Assault": self.read_references("Reference\\MapImageListAssault.txt"),
