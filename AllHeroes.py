@@ -173,13 +173,15 @@ class AllHeroes(GameObject):
         :param respawn_filter: Boolean to apply respawn filter
         :return: Boolean if hero successfully identified
         """
-        potential = self.what_image_is_this(hero_image, character_references, respawn_filter)  # compare to References
+        if len(character_references) == 0:
+            return False
 
+        potential = self.what_image_is_this(hero_image, character_references, respawn_filter)  # compare to References
         for name, name_potential in potential.items():
             all_potential[name] = name_potential
         this_hero.set_potential(all_potential)
-
         identified_hero = max(potential.keys(), key=(lambda k: potential[k]))
+
         if potential[identified_hero] > correct_hero_threshold:  # if enough pixels are the same
             this_hero_split = identified_hero.split("-")
             this_hero.set_hero(this_hero_split[0])
