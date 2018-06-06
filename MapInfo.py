@@ -1260,7 +1260,7 @@ class MapInfo(GameObject):
 
     def dimensions_from_version(self):
         dimensions = {
-            "1.23": {
+            "1.24": {
                 "assault": {
                     "quick": {
                         "point1": {

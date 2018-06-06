@@ -7,6 +7,7 @@ import asyncio
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 import configparser
 from shutil import copyfile
+import logging
 
 from AppUI import AppUI
 from Game import Game
@@ -30,8 +31,8 @@ class AppController(ApplicationSession):
 
         self.debug_mode = overwatch_config["debug_mode"]
         self.game_version = overwatch_config["version"]
-        if float(self.game_version) < 1.23:
-            self.game_version = "1.23"
+        if float(self.game_version) < 1.24:
+            self.game_version = "1.24"
 
         self.bbox = (overwatch_config["start_pixel"], 0, overwatch_config["start_pixel"] + 1920, 1080)
 
@@ -55,6 +56,9 @@ class AppController(ApplicationSession):
     async def onJoin(self, details):
 
         self.loop = asyncio.get_event_loop()
+        if self.debug_mode == 1:
+            self.loop.set_debug(enabled=True)
+            logging.getLogger('asyncio').setLevel(logging.WARNING)
 
         # Initialize Game Object & obtain Subscription String
         self.uiObject = AppUI(self, self.loop)
