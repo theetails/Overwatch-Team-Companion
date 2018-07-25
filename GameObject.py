@@ -61,7 +61,7 @@ class GameObject:
 
     @staticmethod
     def image_to_black_and_white(image_array, cut_off):
-        """ Calculates the median brightness of an image
+        """ Thresholds the image to black and white based on the cut_off value
 
         :param image_array: Numpy Array of image
         :param cut_off: Float of median brightness (0-255)
@@ -73,6 +73,26 @@ class GameObject:
             for pixel_number, each_pixel in enumerate(each_row):
                 if reduce(lambda x, y: int(x) + int(y), each_pixel[:3]) / 3 > cut_off:
                     new_array[row_number][pixel_number] = [255, 255, 255]  # White
+                else:
+                    new_array[row_number][pixel_number] = [0, 0, 0]  # Black
+        return new_array
+
+    def remove_dark_background(self, image_array):
+        """  Changes values below the cut_off to black, keeping other values intact
+
+        :param image_array: Numpy Array of image
+        :return: Numpy Array of black and white image
+        """
+
+        cut_off = self.get_image_balance(image_array, False)
+        if cut_off < 200:
+            cut_off = 200
+        new_array = image_array.copy()
+        new_array.setflags(write=1)
+        for row_number, each_row in enumerate(new_array):
+            for pixel_number, each_pixel in enumerate(each_row):
+                if reduce(lambda x, y: int(x) + int(y), each_pixel[:3]) / 3 > cut_off:
+                    new_array[row_number][pixel_number] = image_array[row_number][pixel_number]
                 else:
                     new_array[row_number][pixel_number] = [0, 0, 0]  # Black
         return new_array
