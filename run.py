@@ -31,8 +31,8 @@ class AppController(ApplicationSession):
 
         self.debug_mode = overwatch_config["debug_mode"]
         self.game_version = overwatch_config["version"]
-        if float(self.game_version) < 1.24:
-            self.game_version = "1.24"
+        if float(self.game_version) < 1.26:
+            self.game_version = "1.26"
 
         self.bbox = (overwatch_config["start_pixel"], 0, overwatch_config["start_pixel"] + 1920, 1080)
 
@@ -169,7 +169,8 @@ class AppController(ApplicationSession):
 
         this_mode_array = this_game_object.map.get_map(screen_img_array, view, section='game_type')
 
-        potential = this_game_object.map.what_image_is_this(this_mode_array, this_game_object.map.mapReferences['Game Type'])
+        potential = this_game_object.map.what_image_is_this(
+            this_mode_array, this_game_object.map.mapReferences['Game Type'])
         this_game_mode = max(potential.keys(), key=(lambda k: potential[k]))
         if potential[this_game_mode] > this_game_object.map.imageThreshold["Game Type"]:
             this_game_mode_split = this_game_mode.split("-")
@@ -179,7 +180,8 @@ class AppController(ApplicationSession):
         this_game_object.map.currentImageArray = this_game_object.map.get_map(
             screen_img_array, view, section=section)  # , threshold_balance=True)
         map_reference = this_game_object.map.what_map_reference(view, section)
-        this_game_object.map.potential = this_game_object.map.what_image_is_this(this_game_object.map.currentImageArray, map_reference)
+        this_game_object.map.potential = this_game_object.map.what_image_is_this(
+            this_game_object.map.currentImageArray, map_reference)
         this_game_object.map.save_debug_data(section, "for_reference")
         print("Done")
 
