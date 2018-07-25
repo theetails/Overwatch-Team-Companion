@@ -294,7 +294,9 @@ class MapInfo(GameObject):
         elif section == "normal":
             map_reference = self.mapReferences["Hero Select Assault"]
         else:
-            if self.game_mode == "control":
+            if self.game_mode == "assault":
+                map_reference = self.mapReferences["Hero Select Assault"]
+            elif self.game_mode == "control":
                 map_reference = self.mapReferences["Hero Select Control"]
             elif self.game_mode == "escort":
                 map_reference = self.mapReferences["Hero Select Escort"]
@@ -364,8 +366,7 @@ class MapInfo(GameObject):
 
         return new_image_array
 
-    @staticmethod
-    def process_image(map_image_array, filter_enabled=True):
+    def process_image(self, map_image_array, filter_enabled=True):
         """ Applies filters and clears edges on provided image array
 
         :param map_image_array: Numpy array of the image to be filtered
@@ -387,7 +388,9 @@ class MapInfo(GameObject):
         # map_image_array = np.flipud(flipped)
 
         if filter_enabled:
-            map_image = Image.fromarray(map_image_array)
+            map_filtered_background = self.remove_dark_background(map_image_array)
+            map_image = Image.fromarray(map_filtered_background)
+            map_image.save("Debug\\Temp Map.png", "PNG")
             contoured_image = map_image.filter(ImageFilter.CONTOUR)  # .filter(ImageFilter.SMOOTH_MORE)
             inverted_image = ImageOps.invert(contoured_image)
 
@@ -1260,7 +1263,7 @@ class MapInfo(GameObject):
 
     def dimensions_from_version(self):
         dimensions = {
-            "1.24": {
+            "1.26": {
                 "assault": {
                     "quick": {
                         "point1": {
