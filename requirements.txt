@@ -1,14 +1,14 @@
 asn1crypto==0.24.0
 attrs==17.4.0
-autobahn==17.10.1
-certifi==2018.1.18
+autobahn==18.7.1
+certifi==2018.4.16
 cffi==1.11.4
 chardet==3.0.4
-cryptography==2.1.4
+cryptography==2.3
 idna==2.6
 numpy==1.14.0
 olefile==0.45.1
-Pillow==5.0.0
+Pillow==5.2.0
 pyasn1==0.4.2
 pyasn1-modules==0.2.1
 pycparser==2.18
@@ -22,7 +22,7 @@ scipy==1.0.0
 service-identity==17.0.0
 six==1.11.0
 sortedcontainers==1.5.9
-txaio==2.8.2
+txaio==18.7.1
 urllib3==1.22
 win-inet-pton==1.0.1
 wincertstore==0.2
