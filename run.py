@@ -7,6 +7,7 @@ import asyncio
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 import configparser
 from shutil import copyfile
+import logging
 
 from AppUI import AppUI
 from Game import Game
@@ -30,6 +31,9 @@ class AppController(ApplicationSession):
 
         self.debug_mode = overwatch_config["debug_mode"]
         self.game_version = overwatch_config["version"]
+        if float(self.game_version) < 1.26:
+            self.game_version = "1.26"
+
         self.bbox = (overwatch_config["start_pixel"], 0, overwatch_config["start_pixel"] + 1920, 1080)
 
         self.this_map = overwatch_config["map"]
@@ -52,6 +56,9 @@ class AppController(ApplicationSession):
     async def onJoin(self, details):
 
         self.loop = asyncio.get_event_loop()
+        if self.debug_mode == 1:
+            self.loop.set_debug(enabled=True)
+            logging.getLogger('asyncio').setLevel(logging.WARNING)
 
         # Initialize Game Object & obtain Subscription String
         self.uiObject = AppUI(self, self.loop)
@@ -100,10 +107,12 @@ class AppController(ApplicationSession):
         reference_string = [
             'Reference\\HeroImageList.txt',
             'Reference\\HeroImageBlurList.txt',
+            'Reference\\RespawnFilter.txt',
         ]
         path = [
             "Reference\\Hero Image Sources",
-            "Reference\\Hero Image Blur Sources"
+            "Reference\\Hero Image Blur Sources",
+            "Reference\\Respawn Filter Source"
         ]
 
         for x in range(0, len(reference_string)):
@@ -119,6 +128,21 @@ class AppController(ApplicationSession):
                 condensed_source_image_list = self.condense_image(source_image_list)
                 line_to_write = file[:-4] + '::' + str(condensed_source_image_list) + '\n'
                 reference_images_file.write(line_to_write)
+
+        reference_images_file = open('Reference\\HeroImageListX.txt', 'w')
+        reference_images = [image for image in listdir("Reference\\Hero Image Sources X")]
+        for file in reference_images:
+            image_path = "Reference\\Hero Image Sources X" + "/" + file
+            source_image = Image.open(image_path)
+            source_image_array = np.array(source_image)
+            threshold_image_array = this_game_object.heroes.threshold(source_image_array, respawn_filter=True)
+            # img = Image.fromarray(threshold_image_array)
+            # img.save("Debug\\Z " + file[:-4] + ".png", "PNG")
+            source_image_list = threshold_image_array.tolist()
+            condensed_source_image_list = self.condense_image(source_image_list)
+            line_to_write = file[:-4] + '::' + str(condensed_source_image_list) + '\n'
+            reference_images_file.write(line_to_write)
+
         print("Done")
 
     def create_images_for_hero_reference(self):
@@ -128,23 +152,48 @@ class AppController(ApplicationSession):
         hero_range = {"Hero Select": 7, "Tab": 13}
         for heroNumber in range(1, hero_range[current_view]):
             hero = this_game_object.heroes.heroesDictionary[heroNumber]
-            this_game_object.heroes.identify_hero(screen_img_array, hero, current_view)
+            result = this_game_object.heroes.identify_hero(screen_img_array, hero, current_view)
             hero.save_debug_data("for_reference")
+            if not result:
+                print(str(heroNumber) + " Failed")
+            else:
+                print(hero.currentHero)
         print("Done")
 
     def create_images_for_map_reference_hero_select(self):
+        view = "Hero Select"
+        section = "extended"
+
         this_game_object = Game(self.game_version, self.bbox, self.debug_mode)
         screen_img_array = this_game_object.get_screen()
+
+        this_mode_array = this_game_object.map.get_map(screen_img_array, view, section='game_type')
+
+        potential = this_game_object.map.what_image_is_this(
+            this_mode_array, this_game_object.map.mapReferences['Game Type'])
+        this_game_mode = max(potential.keys(), key=(lambda k: potential[k]))
+        if potential[this_game_mode] > this_game_object.map.imageThreshold["Game Type"]:
+            this_game_mode_split = this_game_mode.split("-")
+            this_game_object.map.game_mode = this_game_mode_split[0]
+        this_game_object.map.save_debug_data("game_type", "for_reference", this_mode_array, potential)
+
         this_game_object.map.currentImageArray = this_game_object.map.get_map(
-            screen_img_array, "Hero Select", section='extended')  # , threshold_balance=True)
-        this_game_object.map.save_debug_data("for_reference")
+            screen_img_array, view, section=section)  # , threshold_balance=True)
+        map_reference = this_game_object.map.what_map_reference(view, section)
+        this_game_object.map.potential = this_game_object.map.what_image_is_this(
+            this_game_object.map.currentImageArray, map_reference)
+        this_game_object.map.save_debug_data(section, "for_reference")
         print("Done")
 
     def create_images_for_map_reference_tab(self):
         this_game_object = Game(self.game_version, self.bbox, self.debug_mode)
         screen_img_array = this_game_object.get_screen()
         this_game_object.map.currentImageArray = this_game_object.map.get_map(screen_img_array, "Tab", section='normal')
-        this_game_object.map.save_debug_data("for_reference")
+
+        map_reference = this_game_object.map.what_map_reference("Tab", "normal")
+        this_game_object.map.potential = this_game_object.map.what_image_is_this(this_game_object.map.currentImageArray,
+                                                                                 map_reference)
+        this_game_object.map.save_debug_data("normal", "for_reference")
         print("Done")
 
     def create_images_for_map_reference_objective(self):
@@ -160,8 +209,9 @@ class AppController(ApplicationSession):
 
         reference_string = [
             'Reference\\Letters.txt',
-            'Reference\\MapImageListStandard.txt',
+            'Reference\\MapImageListAssault.txt',
             'Reference\\MapImageListControl.txt',
+            'Reference\\MapImageListEscort.txt',
             'Reference\\MapImageListArena.txt',
             'Reference\\MapImageListHybrid.txt',
             'Reference\\MapImageHighThreshold.txt',
@@ -173,8 +223,9 @@ class AppController(ApplicationSession):
         ]
         path = [
             "Reference\\Letters",
-            "Reference\\Map Name Image Sources\\Standard",
+            "Reference\\Map Name Image Sources\\Assault",
             "Reference\\Map Name Image Sources\\Control",
+            "Reference\\Map Name Image Sources\\Escort",
             "Reference\\Map Name Image Sources\\Arena",
             "Reference\\Map Name Image Sources\\Hybrid",
             "Reference\\Map Name Image Sources High Threshold",

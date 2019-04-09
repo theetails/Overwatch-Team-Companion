@@ -27,34 +27,41 @@ class GameObject:
                     reference_image_dictionary[image_string[0]][-1] = final_pixel_list
         return reference_image_dictionary
 
-    def threshold(self, image_array):
+    def threshold(self, image_array, respawn_filter=False):
         """ Turns an image to black and white based on the median brightness
 
         :param image_array: Numpy Array of image
+        :param respawn_filter: Boolean to apply respawn filter
         :return: Numpy Array of processed image
         """
-        balance = self.get_image_balance(image_array)
+        balance = self.get_image_balance(image_array, respawn_filter)
         new_array = self.image_to_black_and_white(image_array, balance)
         return new_array
 
-    @staticmethod
-    def get_image_balance(image_array):
+    def get_image_balance(self, image_array, respawn_filter):
         """ Calculates the median brightness of an image
 
         :param image_array: Numpy Array of image
+        :param respawn_filter: Boolean to apply respawn filter
         :return: Float of median brightness (0-255)
         """
         balance_array = []
-        for each_row in image_array:
-            for each_pixel in each_row:
+        apply_respawn_filter = hasattr(self, 'respawnFilter') and respawn_filter
+
+        for row_number, each_row in enumerate(image_array):
+            for pixel_number, each_pixel in enumerate(each_row):
+                if apply_respawn_filter:
+                    if self.respawnFilter["respawn-filter"][row_number][pixel_number] == 0:
+                        continue
                 avg_num = reduce(lambda x, y: int(x) + int(y), each_pixel[:3]) / 3
                 balance_array.append(avg_num)
+
         balance = reduce(lambda x, y: x + y, balance_array) / len(balance_array)
         return balance
 
     @staticmethod
     def image_to_black_and_white(image_array, cut_off):
-        """ Calculates the median brightness of an image
+        """ Thresholds the image to black and white based on the cut_off value
 
         :param image_array: Numpy Array of image
         :param cut_off: Float of median brightness (0-255)
@@ -70,17 +77,39 @@ class GameObject:
                     new_array[row_number][pixel_number] = [0, 0, 0]  # Black
         return new_array
 
-    @staticmethod
-    def what_image_is_this(captured_image, reference_images_dictionary):
+    def remove_dark_background(self, image_array):
+        """  Changes values below the cut_off to black, keeping other values intact
+
+        :param image_array: Numpy Array of image
+        :return: Numpy Array of black and white image
+        """
+
+        cut_off = self.get_image_balance(image_array, False)
+        if cut_off < 200:
+            cut_off = 200
+        new_array = image_array.copy()
+        new_array.setflags(write=1)
+        for row_number, each_row in enumerate(new_array):
+            for pixel_number, each_pixel in enumerate(each_row):
+                if reduce(lambda x, y: int(x) + int(y), each_pixel[:3]) / 3 > cut_off:
+                    new_array[row_number][pixel_number] = image_array[row_number][pixel_number]
+                else:
+                    new_array[row_number][pixel_number] = [0, 0, 0]  # Black
+        return new_array
+
+    def what_image_is_this(self, captured_image, reference_images_dictionary, respawn_filter=False):
         """ Compares the captured image to the saved reference images and ranks how similar they are
 
         :param captured_image: Numpy Array of image in question
         :param reference_images_dictionary: Dictionary of images (lists) to compare to
+        :param respawn_filter: Boolean to apply respawn_filter
         :return: Dictionary of the scores of the comparisons (0 - 1)
         """
         matched_array = []
         captured_image_list = captured_image.tolist()
         total = {}
+
+        apply_respawn_filter = hasattr(self, 'respawnFilter') and respawn_filter
 
         for item_name, reference_image in reference_images_dictionary.items():
             total[item_name] = 0
@@ -88,11 +117,17 @@ class GameObject:
             for reference_row in reference_image:  # captured_image must not be larger than any reference image
                 pixel = 0
                 for reference_pixel in reference_row:
-                    total[item_name] += 1
+                    skip = False
                     # print("Reference Pixel: " + str(reference_pixel) +
                     #     " Captured Pixel: " + str(captured_image_list[row][pixel][0]))
-                    if reference_pixel == captured_image_list[row][pixel][0]:
-                        matched_array.append(item_name)
+                    if apply_respawn_filter:  # apply filter when respawning
+                        if self.respawnFilter["respawn-filter"][row][pixel] == 0:
+                            # filter out this pixel, it could be red or white and will be covering the hero
+                            skip = True
+                    if not skip:
+                        total[item_name] += 1
+                        if reference_pixel == captured_image_list[row][pixel][0]:
+                            matched_array.append(item_name)
                     pixel = pixel + 1
                 row = row + 1
         counter = Counter(matched_array)

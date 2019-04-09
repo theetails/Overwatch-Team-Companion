@@ -25,17 +25,19 @@ class MapInfo(GameObject):
             # control
             "ilios": "control", "lijiang tower": "control", "nepal": "control", "oasis": "control",
             # escort
-            "dorado": "escort", "junkertown": "escort", "route 66": "escort", "watchpoint gibraltar": "escort",
+            "dorado": "escort", "junkertown": "escort", "rialto": "escort", "route 66": "escort",
+            "watchpoint gibraltar": "escort",
             # arena
             "ayutthaya": "arena", "black forest": "arena", "castillo": "arena", "chateau guillard": "arena",
             "ecopoint antarctica": "arena", "ilios lighthouse": "arena", "ilios ruins": "arena", "ilios well": "arena",
             "lijiang control center": "arena", "lijiang garden": "arena", "lijiang night market": "arena",
             "necropolis": "arena", "nepal sanctum": "arena", "nepal shrine": "arena", "nepal village": "arena",
-            "oasis city center": "arena", "oasis gardens": "arena", "oasis university": "arena"
+            "oasis city center": "arena", "oasis gardens": "arena", "oasis university": "arena", "petra": "arena",
         }
         self.mapReferences = {
-            "Hero Select Standard": self.read_references("Reference\\MapImageListStandard.txt"),
+            "Hero Select Assault": self.read_references("Reference\\MapImageListAssault.txt"),
             "Hero Select Control": self.read_references("Reference\\MapImageListControl.txt"),
+            "Hero Select Escort": self.read_references("Reference\\MapImageListEscort.txt"),
             "Hero Select Hybrid": self.read_references("Reference\\MapImageListHybrid.txt"),
             "Hero Select Arena": self.read_references("Reference\\MapImageListArena.txt"),
             "Tab": self.read_references("Reference\\MapImageListTab.txt"),
@@ -56,7 +58,7 @@ class MapInfo(GameObject):
             "Control": 0.88,
             "Victory": 0.88,
             "Defeat": 0.88,
-            "Game Type": 0.83
+            "Game Type": 0.855
         }
 
         self.current_map_state = MapState()
@@ -64,6 +66,7 @@ class MapInfo(GameObject):
         self.current_map = [None]
         self.currentMapSide = "offense"
         self.mapChange = False
+        self.map_transitioned = False  # for broadcasting new map type
 
         self.previousMap = [None]
         self.previousMapSide = None
@@ -99,13 +102,13 @@ class MapInfo(GameObject):
         :return: string (view) if found, or boolean (False)
         """
         # check if Tab View
-        map_result = self.identify_map(screen_image_array, "Tab")
+        map_result = self.identify_map(screen_image_array, "Tab", current_time)
         if map_result:
             this_view = "Tab"
             self.check_competitive = True
         else:
             # check if Hero Select View
-            map_result = self.identify_map(screen_image_array, "Hero Select")
+            map_result = self.identify_map(screen_image_array, "Hero Select", current_time)
             if map_result:
                 this_view = "Hero Select"
                 self.check_competitive = True
@@ -194,11 +197,12 @@ class MapInfo(GameObject):
         else:
             return self.mapDictionary[self.current_map[0]]
 
-    def identify_map(self, screen_img_array, view):
+    def identify_map(self, screen_img_array, view, current_time):
         """ Processes the screen shot to see if we are in a requested view.
 
         :param screen_img_array: Numpy array of the screen shot
         :param view: String of view to check
+        :param: current_time: String of the current time
         :return: Boolean if map (and thus view) is identified
         """
         potential = None
@@ -233,6 +237,8 @@ class MapInfo(GameObject):
             self.previousMap = self.current_map
             self.current_map = this_map_split
             return True
+        elif section == "extended" and self.debugMode:
+            self.save_debug_data(section, current_time)
         # elif view == "Hero Select":
         #     # Some maps have a mostly white cloud background that moves
         #     this_map_array = self.get_map(screen_img_array, view, section=section, threshold_balance=True)
@@ -268,7 +274,8 @@ class MapInfo(GameObject):
         this_game_mode = max(potential.keys(), key=(lambda k: potential[k]))
         if potential[this_game_mode] > self.imageThreshold["Game Type"]:
             self.previous_game_mode = self.game_mode
-            self.game_mode = this_game_mode
+            this_game_mode_split = this_game_mode.split("-")
+            self.game_mode = this_game_mode_split[0]
             print(this_game_mode + " " + str(potential[this_game_mode]))
             #  Hero Select Confirmed
             return True
@@ -285,32 +292,45 @@ class MapInfo(GameObject):
         if view == "Tab":
             map_reference = self.mapReferences["Tab"]
         elif section == "normal":
-            map_reference = self.mapReferences["Hero Select Standard"]
+            map_reference = self.mapReferences["Hero Select Assault"]
         else:
-            if self.game_mode == "control":
+            if self.game_mode == "assault":
+                map_reference = self.mapReferences["Hero Select Assault"]
+            elif self.game_mode == "control":
                 map_reference = self.mapReferences["Hero Select Control"]
+            elif self.game_mode == "escort":
+                map_reference = self.mapReferences["Hero Select Escort"]
             elif self.game_mode == "transition":
                 map_reference = self.mapReferences["Hero Select Hybrid"]
             else:
                 map_reference = self.mapReferences["Hero Select Arena"]
         return map_reference
 
-    def save_debug_data(self, current_time):
+    def save_debug_data(self, section, current_time, current_image_array=None, potential=None):
         """ Saves the current map to the Debug Folder
 
+        :param section: String of the current date and time
         :param current_time: String of the current date and time
+        :param current_image_array: Image array to be saved
+        :param potential: array of potential maps to be saved
         :return: None
         """
 
+        if current_image_array is None:
+            current_image_array = self.currentImageArray
+
+        if potential is None:
+            potential = self.potential
+
         # save image
-        img = Image.fromarray(self.currentImageArray)
-        img.save("Debug\\Potential " + current_time + " map.png", "PNG")
-        if current_time != "for_reference":
-            # save potential
-            debug_file = open("Debug\\Potential " + current_time + " map.txt", 'w')
-            for potentialMap, value in sorted(self.potential.items(), key=operator.itemgetter(1), reverse=True):
-                line_to_write = str(value) + ': ' + potentialMap + '\n'
-                debug_file.write(line_to_write)
+        img = Image.fromarray(current_image_array)
+        img.save("Debug\\Potential " + section + " " + current_time + " map.png", "PNG")
+
+        # save potential
+        debug_file = open("Debug\\Potential " + section + " " + current_time + " map.txt", 'w')
+        for potentialMap, value in sorted(potential.items(), key=operator.itemgetter(1), reverse=True):
+            line_to_write = str(value) + ': ' + potentialMap + '\n'
+            debug_file.write(line_to_write)
 
     def get_map(self, img_array, view, section='normal', threshold_balance=False):
         """ Processes the screen shot to pull out the desired section and filter it
@@ -330,8 +350,8 @@ class MapInfo(GameObject):
 
         if view == "Hero Select":
             if section != 'game_type':
-                img = Image.fromarray(map_image_array)
-                img.save("Debug\\Full Original Map.png", "PNG")
+                # img = Image.fromarray(map_image_array)
+                # img.save("Debug\\Full Original Map.png", "PNG")
                 processed_image_array = self.process_image(map_image_array, filter_enabled=True)
                 scaled_image_array = imresize(processed_image_array, (19, 180))
             else:
@@ -346,8 +366,7 @@ class MapInfo(GameObject):
 
         return new_image_array
 
-    @staticmethod
-    def process_image(map_image_array, filter_enabled=True):
+    def process_image(self, map_image_array, filter_enabled=True):
         """ Applies filters and clears edges on provided image array
 
         :param map_image_array: Numpy array of the image to be filtered
@@ -369,7 +388,9 @@ class MapInfo(GameObject):
         # map_image_array = np.flipud(flipped)
 
         if filter_enabled:
-            map_image = Image.fromarray(map_image_array)
+            map_filtered_background = self.remove_dark_background(map_image_array)
+            map_image = Image.fromarray(map_filtered_background)
+            map_image.save("Debug\\Temp Map.png", "PNG")
             contoured_image = map_image.filter(ImageFilter.CONTOUR)  # .filter(ImageFilter.SMOOTH_MORE)
             inverted_image = ImageOps.invert(contoured_image)
 
@@ -516,6 +537,8 @@ class MapInfo(GameObject):
             return False
         map_type = self.map_type()
         new_image_array = None
+        self.map_transitioned = False
+
         if map_type == "transition":
             # need to go from assault to escort
             if self.objectiveProgress["currentType"] is None:
@@ -591,6 +614,7 @@ class MapInfo(GameObject):
                     if map_type == "transition":
                         print("Transition to Escort")
                         self.objectiveProgress["currentType"] = "escort"
+                        self.map_transitioned = True
                         return  # will now enter identify_escort_objective_progress
                     else:
                         check_assault_point2 = True
@@ -611,6 +635,7 @@ class MapInfo(GameObject):
                     self.competitive_confirmed = True
                     print("Transition to Escort")
                     self.objectiveProgress["currentType"] = "escort"
+                    self.map_transitioned = True
                     return  # will now enter identify_escort_objective_progress
                 else:
                     check_game_end = True
@@ -1238,7 +1263,7 @@ class MapInfo(GameObject):
 
     def dimensions_from_version(self):
         dimensions = {
-            "1.22": {
+            "1.26": {
                 "assault": {
                     "quick": {
                         "point1": {
